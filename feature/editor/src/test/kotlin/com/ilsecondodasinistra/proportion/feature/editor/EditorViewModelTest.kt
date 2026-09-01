@@ -1,0 +1,290 @@
+package com.ilsecondodasinistra.proportion.feature.editor
+
+import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
+import com.google.common.truth.Truth.assertThat
+import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+class EditorViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val recipes = FakeRecipeRepository(listOf(EditorTestData.cake))
+    private val ingredients = FakeIngredientRepository(
+        listOf(EditorTestData.flour, EditorTestData.eggs),
+    )
+    private val tags = FakeTagRepository(listOf(EditorTestData.dessertTag, EditorTestData.ovenTag))
+
+    private fun viewModel(recipeId: String? = null) = EditorViewModel(
+        savedStateHandle = SavedStateHandle(mapOf("recipeId" to recipeId)),
+        recipeRepository = recipes,
+        ingredientRepository = ingredients,
+        tagRepository = tags,
+    )
+
+    @Test
+    fun `a new draft starts with one empty ingredient line`() = runTest {
+        viewModel().uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+
+            assertThat(state.isEditing).isFalse()
+            assertThat(state.lines).hasSize(1)
+            assertThat(state.lines.single().name).isEmpty()
+            assertThat(state.isDirty).isFalse()
+        }
+    }
+
+    @Test
+    fun `editing an existing recipe loads its lines in order`() = runTest {
+        viewModel(recipeId = "r-cake").uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+
+            assertThat(state.isEditing).isTrue()
+            assertThat(state.title).isEqualTo("Torta di mele")
+            assertThat(state.servings).isEqualTo(4)
+            assertThat(state.lines.map { it.name }).containsExactly("Farina 00", "Uova").inOrder()
+            assertThat(state.lines.first().quantity).isEqualTo("300")
+            assertThat(state.selectedTagIds).containsExactly("tag-dessert")
+            assertThat(state.steps).containsExactly("Sbatti le uova.", "Inforna.").inOrder()
+        }
+    }
+
+    @Test
+    fun `the first edit marks the draft dirty`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Pasta")
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().isDirty).isTrue()
+        }
+    }
+
+    @Test
+    fun `saving without a title reports the error and writes nothing`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onLineQuantityChange(0, "300")
+            vm.onSave()
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().errors).contains(ValidationError.TITLE_REQUIRED)
+        }
+        assertThat(recipes.saved).isEmpty()
+    }
+
+    @Test
+    fun `saving without an ingredient reports the error and writes nothing`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Pasta in bianco")
+            vm.onSave()
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().errors).contains(ValidationError.INGREDIENTS_REQUIRED)
+        }
+        assertThat(recipes.saved).isEmpty()
+    }
+
+    @Test
+    fun `a quantity is required unless the unit is approximate`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Pasta")
+            vm.onLineNameChange(0, "Sale")
+            vm.onSave()
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().errors).contains(ValidationError.QUANTITY_REQUIRED)
+
+            vm.onLineUnitChange(0, MeasureUnit.TO_TASTE)
+            vm.onSave()
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().errors).isEmpty()
+        }
+        assertThat(recipes.saved).hasSize(1)
+    }
+
+    @Test
+    fun `a saved recipe carries its lines, tags and steps`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Torta veloce")
+            vm.onServingsChange(6)
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onLineQuantityChange(0, "250")
+            vm.onAddLine()
+            vm.onLineNameChange(1, "Uova")
+            vm.onLineQuantityChange(1, "3")
+            vm.onLineUnitChange(1, MeasureUnit.EGG)
+            vm.onTagToggle("tag-dessert")
+            vm.onStepChange(0, "Mescola tutto.")
+            vm.onSave()
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val saved = recipes.saved.single()
+        assertThat(saved.title).isEqualTo("Torta veloce")
+        assertThat(saved.servings).isEqualTo(6)
+        assertThat(saved.ingredients.map { it.ingredient.name })
+            .containsExactly("Farina 00", "Uova").inOrder()
+        assertThat(saved.ingredients.map { it.quantity }).containsExactly(250.0, 3.0).inOrder()
+        assertThat(saved.ingredients.last().unit).isEqualTo(MeasureUnit.EGG)
+        assertThat(saved.tags.map { it.id }).containsExactly("tag-dessert")
+        assertThat(saved.steps).containsExactly("Mescola tutto.")
+    }
+
+    @Test
+    fun `an existing ingredient is reused rather than duplicated`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Frittata")
+            vm.onLineNameChange(0, "  uova  ")
+            vm.onLineQuantityChange(0, "4")
+            vm.onLineUnitChange(0, MeasureUnit.EGG)
+            vm.onSave()
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat(ingredients.created).isEmpty()
+        assertThat(recipes.saved.single().ingredients.single().ingredient.id).isEqualTo("ing-uova")
+    }
+
+    @Test
+    fun `a new ingredient is created once`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Risotto")
+            vm.onLineNameChange(0, "Riso Carnaroli")
+            vm.onLineQuantityChange(0, "320")
+            vm.onSave()
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat(ingredients.created.map { it.name }).containsExactly("Riso Carnaroli")
+    }
+
+    @Test
+    fun `typing an ingredient name suggests matches from the catalogue`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+
+            vm.onLineNameChange(0, "far")
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertThat(state.suggestions.map { it.name }).containsExactly("Farina 00")
+            assertThat(state.suggestionLineIndex).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `lines can be added, removed and reordered`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onAddLine()
+            vm.onLineNameChange(1, "Uova")
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().lines.map { it.name })
+                .containsExactly("Farina 00", "Uova").inOrder()
+
+            vm.onMoveLine(1, 0)
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().lines.map { it.name })
+                .containsExactly("Uova", "Farina 00").inOrder()
+
+            vm.onRemoveLine(0)
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().lines.map { it.name }).containsExactly("Farina 00")
+        }
+    }
+
+    @Test
+    fun `a new user tag is created and selected`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+
+            vm.onCreateTag("merenda")
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertThat(state.availableTags.map { it.name }).contains("merenda")
+            assertThat(state.selectedTagIds).contains("tag-merenda")
+        }
+    }
+
+    @Test
+    fun `editing an existing recipe keeps its id`() = runTest {
+        val vm = viewModel(recipeId = "r-cake")
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Torta di mele della nonna")
+            vm.onSave()
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val saved = recipes.saved.single()
+        assertThat(saved.id).isEqualTo("r-cake")
+        assertThat(saved.title).isEqualTo("Torta di mele della nonna")
+    }
+
+    @Test
+    fun `saving reports completion so the screen can navigate back`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Pane")
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onLineQuantityChange(0, "500")
+            vm.onSave()
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().isSaved).isTrue()
+        }
+    }
+
+    @Test
+    fun `a comma decimal separator is accepted`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Sciroppo")
+            vm.onLineNameChange(0, "Acqua")
+            vm.onLineQuantityChange(0, "1,5")
+            vm.onLineUnitChange(0, MeasureUnit.LITRE)
+            vm.onSave()
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat(recipes.saved.single().ingredients.single().quantity).isEqualTo(1.5)
+    }
+}

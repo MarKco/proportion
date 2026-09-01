@@ -1,0 +1,160 @@
+package com.ilsecondodasinistra.proportion.feature.cook
+
+import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
+import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.ScaleVariantRepository
+import com.ilsecondodasinistra.proportion.core.domain.scale.BakingAdvisor
+import com.ilsecondodasinistra.proportion.core.domain.scale.DefaultRecipeScaler
+import com.ilsecondodasinistra.proportion.core.domain.scale.DiscreteAnalyser
+import com.ilsecondodasinistra.proportion.core.domain.scale.RecipeScaler
+import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
+import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
+import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
+import com.ilsecondodasinistra.proportion.core.domain.unit.UnitNamer
+import com.ilsecondodasinistra.proportion.core.model.Ingredient
+import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
+import com.ilsecondodasinistra.proportion.core.model.Recipe
+import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
+import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
+import com.ilsecondodasinistra.proportion.core.model.Tag
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.Json
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class MainDispatcherRule(
+    private val dispatcher: TestDispatcher = StandardTestDispatcher(),
+) : TestWatcher() {
+    override fun starting(description: Description) = Dispatchers.setMain(dispatcher)
+    override fun finished(description: Description) = Dispatchers.resetMain()
+}
+
+class TestUnitNamer : UnitNamer {
+    override fun shortName(unit: MeasureUnit, qty: Double): String = when (unit) {
+        MeasureUnit.GRAM -> "g"
+        MeasureUnit.KILOGRAM -> "kg"
+        MeasureUnit.EGG -> if (qty == 1.0) "uovo" else "uova"
+        MeasureUnit.SACHET -> if (qty == 1.0) "bustina" else "bustine"
+        MeasureUnit.TO_TASTE -> "q.b."
+        else -> unit.name.lowercase()
+    }
+}
+
+object CookTestData {
+
+    val ovenTag = Tag(id = "tag-oven", key = "oven", name = null, isBuiltIn = true)
+
+    private fun ingredient(name: String, unit: MeasureUnit) =
+        Ingredient("ing-${name.lowercase()}", name, name.lowercase(), unit)
+
+    fun line(name: String, qty: Double?, unit: MeasureUnit, position: Int) = RecipeIngredient(
+        id = "line-${name.lowercase()}",
+        ingredient = ingredient(name, unit),
+        position = position,
+        quantity = qty,
+        unit = unit,
+    )
+
+    /** Serves 4: 300 g flour, 2 eggs, salt to taste. */
+    val cake = Recipe(
+        id = "r-cake",
+        title = "Torta di mele",
+        servings = 4,
+        steps = listOf("Sbatti le uova.", "Inforna a 180 gradi."),
+        ingredients = listOf(
+            line("Farina", 300.0, MeasureUnit.GRAM, 0),
+            line("Uova", 2.0, MeasureUnit.EGG, 1),
+            line("Sale", null, MeasureUnit.TO_TASTE, 2),
+        ),
+        tags = emptyList(),
+    )
+
+    val ovenCake = cake.copy(id = "r-oven", tags = listOf(ovenTag))
+
+    /** Serves 2 with 3 eggs, so x1.5 asks for 4.5 eggs. */
+    val eggRecipe = Recipe(
+        id = "r-eggs",
+        title = "Frittata",
+        servings = 2,
+        steps = listOf("Sbatti."),
+        ingredients = listOf(line("Uova", 3.0, MeasureUnit.EGG, 0)),
+        tags = emptyList(),
+    )
+
+    val jam = Recipe(
+        id = "r-jam",
+        title = "Marmellata",
+        servings = null,
+        steps = listOf("Cuoci."),
+        ingredients = listOf(line("Zucchero", 500.0, MeasureUnit.GRAM, 0)),
+        tags = emptyList(),
+    )
+}
+
+class FakeRecipeRepository(initial: List<Recipe>) : RecipeRepository {
+
+    private val stored = MutableStateFlow(initial)
+    val cookedIds = mutableListOf<String>()
+
+    override fun observeRecipes(filter: RecipeFilter): Flow<List<Recipe>> = stored
+    override fun observeRecipe(id: String): Flow<Recipe?> =
+        stored.map { list -> list.firstOrNull { it.id == id } }
+    override fun observeRecipeCount(): Flow<Int> = stored.map { it.size }
+    override suspend fun upsert(recipe: Recipe): String = recipe.id
+    override suspend fun delete(id: String) = Unit
+    override suspend fun markCooked(id: String, at: Long) {
+        cookedIds += id
+    }
+    override suspend fun setFavourite(id: String, favourite: Boolean) = Unit
+}
+
+class FakeScaleVariantRepository : ScaleVariantRepository {
+
+    private val stored = MutableStateFlow<List<ScaleVariant>>(emptyList())
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    val savedConstraints = mutableListOf<Pair<String, ScaleConstraint>>()
+
+    override fun observeForRecipe(recipeId: String): Flow<List<ScaleVariant>> =
+        stored.map { list -> list.filter { it.recipeId == recipeId } }
+
+    override fun readConstraint(variant: ScaleVariant): ScaleConstraint =
+        json.decodeFromString(variant.constraintPayload)
+
+    override suspend fun save(
+        recipeId: String,
+        label: String,
+        constraint: ScaleConstraint,
+        asDefault: Boolean,
+    ): String {
+        savedConstraints += label to constraint
+        val id = "variant-${stored.value.size + 1}"
+        stored.value = stored.value + ScaleVariant(
+            id = id,
+            recipeId = recipeId,
+            label = label,
+            constraintPayload = json.encodeToString(constraint),
+            isDefault = asDefault,
+        )
+        return id
+    }
+
+    override suspend fun delete(id: String) = Unit
+}
+
+fun testFormatter(): QuantityFormatter = QuantityFormatter(DefaultUnitConverter(), TestUnitNamer())
+
+fun testScaler(): RecipeScaler {
+    val converter = DefaultUnitConverter()
+    val formatter = testFormatter()
+    return DefaultRecipeScaler(converter, formatter, DiscreteAnalyser(formatter), BakingAdvisor())
+}

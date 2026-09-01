@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">Follow the system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_colour">Colours from the wallpaper</string>
+    <string name="settings_dynamic_colour_off">When off, the ProPortion pastel palette is used</string>
+    <string name="settings_data">Your recipes</string>
+    <string name="settings_backup">Back up all recipes</string>
+    <string name="settings_backup_hint">Writes a .proportion file wherever you choose.</string>
+    <string name="settings_restore">Restore from a backup</string>
+    <string name="settings_restore_hint">Reads a .proportion file and asks before changing anything.</string>
+    <string name="settings_restore_title">Restore</string>
+    <string name="settings_restore_counts">%1$d recipes in this file, %2$d already here.</string>
+    <string name="settings_restore_merge">Merge</string>
+    <string name="settings_restore_replace">Replace everything</string>
+    <string name="settings_restore_cancel">Cancel</string>
+    <string name="settings_replace_confirm_title">Replace every recipe?</string>
+    <string name="settings_replace_confirm_message">Your current recipes will be deleted and replaced by the ones in this file.</string>
+    <string name="settings_replace_confirm_yes">Replace</string>
+    <string name="settings_backup_done">Backup saved</string>
+    <string name="settings_restore_done">%1$d recipes added, %2$d skipped</string>
+    <string name="settings_restore_replaced">%1$d recipes restored</string>
+    <string name="settings_error_not_proportion">This is not a ProPortion file.</string>
+    <string name="settings_error_future">This file was written by a newer version of the app (%1$d).</string>
+    <string name="settings_error_malformed">This file could not be read.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_author">ProPortion — Marco Zanetti</string>
+    <string name="settings_version">Version %1$s</string>
+</resources>

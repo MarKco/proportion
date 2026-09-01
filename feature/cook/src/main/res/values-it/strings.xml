@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cook_title">Esegui</string>
+    <string name="cook_mode_servings">Persone</string>
+    <string name="cook_mode_ingredient">Ingrediente</string>
+    <string name="cook_mode_factor">Fattore</string>
+    <string name="cook_mode_pantry">Dispensa</string>
+    <string name="cook_from_servings">da %1$d · fattore %2$s</string>
+    <string name="cook_factor_only">fattore %1$s</string>
+    <string name="cook_pick_ingredient">Tocca l\'ingrediente che vuoi fissare</string>
+    <string name="cook_fixed_ingredient">Fissato: %1$s</string>
+    <string name="cook_pantry_hint">Dimmi quanto hai e calcolo il massimo che puoi fare</string>
+    <string name="cook_pantry_have">Ho</string>
+    <string name="cook_bottleneck">Collo di bottiglia</string>
+    <string name="cook_achievable">Puoi farne per circa %1$s persone</string>
+    <string name="cook_leftovers">Avanzano: %1$s</string>
+    <string name="cook_show_card">Vedi la scheda</string>
+    <string name="cook_show_adjust">Torna a regolare</string>
+    <string name="cook_save_variant">Salva questa scalatura</string>
+    <string name="cook_save_dialog_title">Salva questa scalatura</string>
+    <string name="cook_save_dialog_label">Nome</string>
+    <string name="cook_save_dialog_confirm">Salva</string>
+    <string name="cook_save_dialog_cancel">Annulla</string>
+    <string name="cook_label_servings">Per %1$s persone</string>
+    <string name="cook_label_factor">Fattore %1$s</string>
+    <string name="cook_label_pantry">Con quello che ho</string>
+    <string name="cook_error_no_servings">Questa ricetta non è scritta a persona: usa il fattore o un ingrediente.</string>
+    <string name="cook_error_unit">Questa quantità non è confrontabile con quella della ricetta.</string>
+    <string name="cook_error_approximate">Questo ingrediente è approssimativo, non può fissare la ricetta.</string>
+    <string name="cook_error_factor">Inserisci una quantità maggiore di zero.</string>
+    <string name="cook_back">Indietro</string>
+    <string name="cook_steps">Procedimento</string>
+    <string name="cook_ingredients">Ingredienti</string>
+    <string name="cook_achievable_card">Per %1$s persone</string>
+</resources>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Impostazioni</string>
+    <string name="settings_appearance">Aspetto</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_system">Come il sistema</string>
+    <string name="settings_theme_light">Chiaro</string>
+    <string name="settings_theme_dark">Scuro</string>
+    <string name="settings_dynamic_colour">Colori dallo sfondo</string>
+    <string name="settings_dynamic_colour_off">Da spento usa la palette pastello di ProPortion</string>
+    <string name="settings_data">Le tue ricette</string>
+    <string name="settings_backup">Salva tutte le ricette</string>
+    <string name="settings_backup_hint">Scrive un file .proportion dove preferisci.</string>
+    <string name="settings_restore">Ripristina da un backup</string>
+    <string name="settings_restore_hint">Legge un file .proportion e chiede conferma prima di cambiare qualcosa.</string>
+    <string name="settings_restore_title">Ripristino</string>
+    <string name="settings_restore_counts">%1$d ricette nel file, %2$d già presenti.</string>
+    <string name="settings_restore_merge">Unisci</string>
+    <string name="settings_restore_replace">Sostituisci tutto</string>
+    <string name="settings_restore_cancel">Annulla</string>
+    <string name="settings_replace_confirm_title">Sostituire tutte le ricette?</string>
+    <string name="settings_replace_confirm_message">Le ricette attuali verranno eliminate e sostituite da quelle nel file.</string>
+    <string name="settings_replace_confirm_yes">Sostituisci</string>
+    <string name="settings_backup_done">Backup salvato</string>
+    <string name="settings_restore_done">%1$d ricette aggiunte, %2$d saltate</string>
+    <string name="settings_restore_replaced">%1$d ricette ripristinate</string>
+    <string name="settings_error_not_proportion">Questo non è un file ProPortion.</string>
+    <string name="settings_error_future">Questo file è stato scritto da una versione più recente dell\'app (%1$d).</string>
+    <string name="settings_error_malformed">Non riesco a leggere questo file.</string>
+    <string name="settings_about">Informazioni</string>
+    <string name="settings_about_author">ProPortion — Marco Zanetti</string>
+    <string name="settings_version">Versione %1$s</string>
+</resources>

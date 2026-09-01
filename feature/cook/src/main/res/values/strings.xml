@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cook_title">Cook</string>
+    <string name="cook_mode_servings">Servings</string>
+    <string name="cook_mode_ingredient">Ingredient</string>
+    <string name="cook_mode_factor">Factor</string>
+    <string name="cook_mode_pantry">Pantry</string>
+    <string name="cook_from_servings">from %1$d · factor %2$s</string>
+    <string name="cook_factor_only">factor %1$s</string>
+    <string name="cook_pick_ingredient">Tap the ingredient you want to fix</string>
+    <string name="cook_fixed_ingredient">Fixed: %1$s</string>
+    <string name="cook_pantry_hint">Tell me how much you have and I will work out the most you can make</string>
+    <string name="cook_pantry_have">I have</string>
+    <string name="cook_bottleneck">Bottleneck</string>
+    <string name="cook_achievable">You can make about %1$s servings</string>
+    <string name="cook_leftovers">Left over: %1$s</string>
+    <string name="cook_show_card">View the card</string>
+    <string name="cook_show_adjust">Adjust again</string>
+    <string name="cook_save_variant">Save this scaling</string>
+    <string name="cook_save_dialog_title">Save this scaling</string>
+    <string name="cook_save_dialog_label">Name</string>
+    <string name="cook_save_dialog_confirm">Save</string>
+    <string name="cook_save_dialog_cancel">Cancel</string>
+    <string name="cook_label_servings">For %1$s servings</string>
+    <string name="cook_label_factor">Factor %1$s</string>
+    <string name="cook_label_pantry">With what I have</string>
+    <string name="cook_error_no_servings">This recipe is not written per person: use factor or ingredient instead.</string>
+    <string name="cook_error_unit">That amount cannot be compared with the one in the recipe.</string>
+    <string name="cook_error_approximate">This ingredient is written as approximate, so it cannot fix the recipe.</string>
+    <string name="cook_error_factor">Enter an amount greater than zero.</string>
+    <string name="cook_back">Back</string>
+    <string name="cook_steps">Method</string>
+    <string name="cook_ingredients">Ingredients</string>
+    <string name="cook_achievable_card">For %1$s servings</string>
+</resources>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Clipart-style 3D pie chart with candles.
+  Top face: ellipse centred at (54,58), rx 30, ry 17, cut into three wedges.
+  Side wall: 9dp extrusion, each panel a darker shade of the wedge above it.
+  Everything sits inside the 66dp adaptive-icon safe zone.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- side wall, left half (darker rose) -->
+    <path
+        android:fillColor="#C98CA1"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M24,58 A30,17 0 0,0 54,75 L54,84 A30,17 0 0,1 24,67 Z" />
+
+    <!-- side wall, right half (darker apricot) -->
+    <path
+        android:fillColor="#D28F6C"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M54,75 A30,17 0 0,0 84,58 L84,67 A30,17 0 0,1 54,84 Z" />
+
+    <!-- top face, right wedge (apricot) -->
+    <path
+        android:fillColor="#F4B393"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M54,58 L54,41 A30,17 0 0,1 80,66.5 Z" />
+
+    <!-- top face, front wedge (rose) -->
+    <path
+        android:fillColor="#EFB0C4"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M54,58 L80,66.5 A30,17 0 0,1 28,66.5 Z" />
+
+    <!-- top face, left wedge (butter) -->
+    <path
+        android:fillColor="#F2D48A"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M54,58 L28,66.5 A30,17 0 0,1 54,41 Z" />
+
+    <!-- candle left -->
+    <path
+        android:fillColor="#FFF6E2"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round"
+        android:pathData="M39,55 L39,41 L45,41 L45,55 Z" />
+    <path
+        android:fillColor="#F49B5F"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="1.8"
+        android:pathData="M42,40 C45,36 44.5,32 42,29 C39.5,32 39,36 42,40 Z" />
+
+    <!-- candle centre -->
+    <path
+        android:fillColor="#FFF6E2"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round"
+        android:pathData="M51,50 L51,34 L57,34 L57,50 Z" />
+    <path
+        android:fillColor="#F49B5F"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="1.8"
+        android:pathData="M54,33 C57,29 56.5,24 54,21 C51.5,24 51,29 54,33 Z" />
+
+    <!-- candle right -->
+    <path
+        android:fillColor="#FFF6E2"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round"
+        android:pathData="M63,55 L63,41 L69,41 L69,55 Z" />
+    <path
+        android:fillColor="#F49B5F"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="1.8"
+        android:pathData="M66,40 C69,36 68.5,32 66,29 C63.5,32 63,36 66,40 Z" />
+</vector>

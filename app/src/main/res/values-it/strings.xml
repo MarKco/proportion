@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ProPortion</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_recipes">Ricettario</string>
+    <string name="nav_shopping">Spesa</string>
+    <string name="nav_settings">Impostazioni</string>
+</resources>

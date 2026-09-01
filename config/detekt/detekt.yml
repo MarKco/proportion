@@ -1,0 +1,49 @@
+# Only the deviations from detekt's default config live here (buildUponDefaultConfig = true).
+build:
+  maxIssues: 0
+
+complexity:
+  CyclomaticComplexMethod:
+    # An exhaustive `when` over MeasureUnit is a lookup table, not branching logic.
+    threshold: 25
+  TooManyFunctions:
+    # An editor ViewModel is mostly one small function per user action; that is the point.
+    thresholdInClasses: 30
+    thresholdInInterfaces: 20
+    thresholdInFiles: 25
+    thresholdInObjects: 25
+    ignoreAnnotatedFunctions: ['Composable']
+  LongParameterList:
+    # Room DAO queries take many parameters, and a stateless composable takes one lambda per event.
+    functionThreshold: 9
+    constructorThreshold: 9
+    ignoreAnnotated: ['Composable']
+  LongMethod:
+    # A composable's body is a layout tree, not branching logic; splitting it by line count alone
+    # produces worse code than leaving it whole.
+    threshold: 80
+    ignoreAnnotated: ['Composable']
+
+style:
+  MaxLineLength:
+    maxLineLength: 120
+  MagicNumber:
+    # Unit conversion factors are the meaning, not a magic constant hiding one.
+    ignoreEnums: true
+    ignoreNumbers: ['-1', '0', '1', '2', '100', '1000']
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotated: ['Composable', 'Preview']
+  ReturnCount:
+    max: 6
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+
+naming:
+  FunctionNaming:
+    # Composables are PascalCase by convention.
+    ignoreAnnotated: ['Composable']
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false

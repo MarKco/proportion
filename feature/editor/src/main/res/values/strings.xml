@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="editor_title_new">New recipe</string>
+    <string name="editor_title_edit">Edit recipe</string>
+    <string name="editor_field_title">Recipe name</string>
+    <string name="editor_field_servings">Servings</string>
+    <string name="editor_field_notes">Notes</string>
+    <string name="editor_section_ingredients">Ingredients</string>
+    <string name="editor_section_steps">Method</string>
+    <string name="editor_section_tags">Tags</string>
+    <string name="editor_add_ingredient">Add ingredient</string>
+    <string name="editor_add_step">Add step</string>
+    <string name="editor_new_tag">New tag</string>
+    <string name="editor_ingredient_name">Ingredient</string>
+    <string name="editor_quantity">Quantity</string>
+    <string name="editor_remove">Remove</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_back">Back</string>
+    <string name="editor_error_title">Give the recipe a name</string>
+    <string name="editor_error_ingredients">Add at least one ingredient</string>
+    <string name="editor_error_quantity">Enter a quantity, or pick an approximate unit</string>
+    <string name="editor_discard_title">Discard changes?</string>
+    <string name="editor_discard_message">The changes you made will be lost.</string>
+    <string name="editor_discard_confirm">Discard</string>
+    <string name="editor_discard_cancel">Keep editing</string>
+    <string name="editor_step_number">Step %d</string>
+</resources>

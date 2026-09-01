@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Built-in tags. Keys come from Tag.BUILT_IN_KEYS and never change. -->
+    <string name="tag_appetizer">Appetizer</string>
+    <string name="tag_first_course">First course</string>
+    <string name="tag_main_course">Main course</string>
+    <string name="tag_side_dish">Side dish</string>
+    <string name="tag_dessert">Dessert</string>
+    <string name="tag_bread_and_leavened">Bread and doughs</string>
+    <string name="tag_preserves">Preserves</string>
+    <string name="tag_drinks">Drinks</string>
+    <string name="tag_oven">Oven</string>
+
+    <!-- Unit categories, used as headers in the unit picker -->
+    <string name="unit_category_mass">Weight</string>
+    <string name="unit_category_volume">Volume</string>
+    <string name="unit_category_count">Count</string>
+    <string name="unit_category_approximate">Approximate</string>
+
+    <!-- Shared state bodies -->
+    <string name="state_loading">Loading</string>
+    <string name="state_error_title">Something went wrong</string>
+    <string name="state_retry">Try again</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_select_unit">Unit</string>
+
+    <!-- Unit names. Source language for these is English; values-it holds the Italian. -->
+    <string name="unit_gram">g</string>
+    <string name="unit_kilogram">kg</string>
+    <string name="unit_millilitre">ml</string>
+    <string name="unit_litre">l</string>
+    <string name="unit_teaspoon">tsp</string>
+    <string name="unit_tablespoon">tbsp</string>
+    <string name="unit_glass">glass</string>
+    <string name="unit_cup">cup</string>
+    <string name="unit_to_taste">to taste</string>
+    <string name="unit_pinch">a pinch</string>
+    <string name="unit_drizzle">a drizzle</string>
+
+    <plurals name="unit_piece">
+        <item quantity="one">piece</item>
+        <item quantity="other">pieces</item>
+    </plurals>
+    <plurals name="unit_egg">
+        <item quantity="one">egg</item>
+        <item quantity="other">eggs</item>
+    </plurals>
+    <plurals name="unit_clove">
+        <item quantity="one">clove</item>
+        <item quantity="other">cloves</item>
+    </plurals>
+    <plurals name="unit_slice">
+        <item quantity="one">slice</item>
+        <item quantity="other">slices</item>
+    </plurals>
+    <plurals name="unit_leaf">
+        <item quantity="one">leaf</item>
+        <item quantity="other">leaves</item>
+    </plurals>
+    <plurals name="unit_sachet">
+        <item quantity="one">sachet</item>
+        <item quantity="other">sachets</item>
+    </plurals>
+    <plurals name="unit_jar">
+        <item quantity="one">jar</item>
+        <item quantity="other">jars</item>
+    </plurals>
+    <string name="warning_label">Warning</string>
+    <string name="warning_snap_to">Round to %s</string>
+    <string name="warning_non_integer">%1$s is not a practical amount</string>
+    <string name="warning_too_small">Less than a pinch — measure by eye</string>
+    <string name="warning_oven_title">Baking does not scale in proportion</string>
+    <string name="warning_oven_message">Check for doneness early: time and temperature do not follow the factor. For the same batter depth, use a tin about %1$s times the diameter.</string>
+</resources>

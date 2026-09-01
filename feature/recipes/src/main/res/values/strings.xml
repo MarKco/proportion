@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recipes_title">Recipes</string>
+    <string name="recipes_search_hint">Search recipes and ingredients</string>
+    <string name="recipes_filter_ingredients">Ingredients</string>
+    <string name="recipes_filter_ingredients_sheet">Filter by ingredient</string>
+    <string name="recipes_clear_filters">Clear filters</string>
+    <string name="recipes_sort">Sort</string>
+    <string name="recipes_sort_recent">Recently updated</string>
+    <string name="recipes_sort_alphabetical">A to Z</string>
+    <string name="recipes_sort_most_cooked">Most cooked</string>
+    <string name="recipes_add">Add recipe</string>
+    <string name="recipes_empty_library_title">No recipes yet</string>
+    <string name="recipes_empty_library_message">Add your first recipe and ProPortion will rescale it for any number of people.</string>
+    <string name="recipes_empty_library_action">Add a recipe</string>
+    <string name="recipes_no_results_title">Nothing matches</string>
+    <string name="recipes_no_results_message">No recipe matches these filters.</string>
+    <string name="recipe_detail_cook">Cook this recipe</string>
+    <string name="recipe_detail_cook_unavailable">Coming in the next release</string>
+    <string name="recipe_detail_ingredients">Ingredients</string>
+    <string name="recipe_detail_steps">Method</string>
+    <string name="recipe_detail_variants">Saved scalings</string>
+    <string name="recipe_detail_not_found">This recipe is no longer available.</string>
+    <string name="recipe_detail_favourite_add">Add to favourites</string>
+    <string name="recipe_detail_favourite_remove">Remove from favourites</string>
+    <string name="recipe_detail_edit">Edit</string>
+    <string name="recipe_detail_delete">Delete</string>
+    <string name="recipe_detail_back">Back</string>
+    <string name="recipe_no_servings">Not per person</string>
+
+    <plurals name="recipes_result_count">
+        <item quantity="one">%d recipe</item>
+        <item quantity="other">%d recipes</item>
+    </plurals>
+    <plurals name="recipe_servings">
+        <item quantity="one">%d serving</item>
+        <item quantity="other">%d servings</item>
+    </plurals>
+    <plurals name="recipe_ingredient_count">
+        <item quantity="one">%d ingredient</item>
+        <item quantity="other">%d ingredients</item>
+    </plurals>
+    <string name="recipe_share_text">Share as text</string>
+    <string name="recipe_share_file">Share as a .proportion file</string>
+    <string name="recipe_share_chooser">Share recipe</string>
+    <string name="plain_servings">For %1$d servings</string>
+    <string name="plain_scaled">Rescaled for %1$s servings</string>
+    <string name="plain_not_per_person">Not per person</string>
+    <string name="plain_ingredients">Ingredients</string>
+    <string name="plain_method">Method</string>
+    <string name="plain_attribution">Shared with ProPortion</string>
+</resources>

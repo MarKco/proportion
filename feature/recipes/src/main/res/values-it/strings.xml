@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recipes_title">Ricettario</string>
+    <string name="recipes_search_hint">Cerca fra ricette e ingredienti</string>
+    <string name="recipes_filter_ingredients">Ingredienti</string>
+    <string name="recipes_filter_ingredients_sheet">Filtra per ingrediente</string>
+    <string name="recipes_clear_filters">Azzera i filtri</string>
+    <string name="recipes_sort">Ordina</string>
+    <string name="recipes_sort_recent">Modificate di recente</string>
+    <string name="recipes_sort_alphabetical">Dalla A alla Z</string>
+    <string name="recipes_sort_most_cooked">Più cucinate</string>
+    <string name="recipes_add">Aggiungi ricetta</string>
+    <string name="recipes_empty_library_title">Nessuna ricetta</string>
+    <string name="recipes_empty_library_message">Inserisci la prima ricetta e ProPortion la riproporzionerà per qualsiasi numero di persone.</string>
+    <string name="recipes_empty_library_action">Aggiungi una ricetta</string>
+    <string name="recipes_no_results_title">Nessun risultato</string>
+    <string name="recipes_no_results_message">Nessuna ricetta corrisponde a questi filtri.</string>
+    <string name="recipe_detail_cook">Esegui ricetta</string>
+    <string name="recipe_detail_cook_unavailable">Disponibile nel prossimo aggiornamento</string>
+    <string name="recipe_detail_ingredients">Ingredienti</string>
+    <string name="recipe_detail_steps">Procedimento</string>
+    <string name="recipe_detail_variants">Scalature salvate</string>
+    <string name="recipe_detail_not_found">Questa ricetta non è più disponibile.</string>
+    <string name="recipe_detail_favourite_add">Aggiungi ai preferiti</string>
+    <string name="recipe_detail_favourite_remove">Togli dai preferiti</string>
+    <string name="recipe_detail_edit">Modifica</string>
+    <string name="recipe_detail_delete">Elimina</string>
+    <string name="recipe_detail_back">Indietro</string>
+    <string name="recipe_no_servings">Non a persona</string>
+
+    <plurals name="recipes_result_count">
+        <item quantity="one">%d ricetta</item>
+        <item quantity="other">%d ricette</item>
+    </plurals>
+    <plurals name="recipe_servings">
+        <item quantity="one">%d persona</item>
+        <item quantity="other">%d persone</item>
+    </plurals>
+    <plurals name="recipe_ingredient_count">
+        <item quantity="one">%d ingrediente</item>
+        <item quantity="other">%d ingredienti</item>
+    </plurals>
+    <string name="recipe_share_text">Condividi come testo</string>
+    <string name="recipe_share_file">Condividi file .proportion</string>
+    <string name="recipe_share_chooser">Condividi ricetta</string>
+    <string name="plain_servings">Per %1$d persone</string>
+    <string name="plain_scaled">Riproporzionata per %1$s persone</string>
+    <string name="plain_not_per_person">Non a persona</string>
+    <string name="plain_ingredients">Ingredienti</string>
+    <string name="plain_method">Procedimento</string>
+    <string name="plain_attribution">Condivisa con ProPortion</string>
+</resources>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tag_appetizer">Antipasto</string>
+    <string name="tag_first_course">Primo</string>
+    <string name="tag_main_course">Secondo</string>
+    <string name="tag_side_dish">Contorno</string>
+    <string name="tag_dessert">Dolce</string>
+    <string name="tag_bread_and_leavened">Pane e lievitati</string>
+    <string name="tag_preserves">Conserve</string>
+    <string name="tag_drinks">Bevande</string>
+    <string name="tag_oven">Al forno</string>
+
+    <string name="unit_category_mass">Peso</string>
+    <string name="unit_category_volume">Volume</string>
+    <string name="unit_category_count">Quantità</string>
+    <string name="unit_category_approximate">Approssimativo</string>
+
+    <string name="state_loading">Caricamento</string>
+    <string name="state_error_title">Qualcosa è andato storto</string>
+    <string name="state_retry">Riprova</string>
+    <string name="action_clear">Azzera</string>
+    <string name="action_select_unit">Unità</string>
+
+    <string name="unit_gram">g</string>
+    <string name="unit_kilogram">kg</string>
+    <string name="unit_millilitre">ml</string>
+    <string name="unit_litre">l</string>
+    <string name="unit_teaspoon">cucchiaino</string>
+    <string name="unit_tablespoon">cucchiaio</string>
+    <string name="unit_glass">bicchiere</string>
+    <string name="unit_cup">tazza</string>
+    <string name="unit_to_taste">q.b.</string>
+    <string name="unit_pinch">un pizzico</string>
+    <string name="unit_drizzle">un filo</string>
+
+    <plurals name="unit_piece">
+        <item quantity="one">pezzo</item>
+        <item quantity="other">pezzi</item>
+    </plurals>
+    <plurals name="unit_egg">
+        <item quantity="one">uovo</item>
+        <item quantity="other">uova</item>
+    </plurals>
+    <plurals name="unit_clove">
+        <item quantity="one">spicchio</item>
+        <item quantity="other">spicchi</item>
+    </plurals>
+    <plurals name="unit_slice">
+        <item quantity="one">fetta</item>
+        <item quantity="other">fette</item>
+    </plurals>
+    <plurals name="unit_leaf">
+        <item quantity="one">foglia</item>
+        <item quantity="other">foglie</item>
+    </plurals>
+    <plurals name="unit_sachet">
+        <item quantity="one">bustina</item>
+        <item quantity="other">bustine</item>
+    </plurals>
+    <plurals name="unit_jar">
+        <item quantity="one">vasetto</item>
+        <item quantity="other">vasetti</item>
+    </plurals>
+    <string name="warning_label">Avviso</string>
+    <string name="warning_snap_to">Arrotonda a %s</string>
+    <string name="warning_non_integer">%1$s non è una quantità pratica</string>
+    <string name="warning_too_small">Meno di un pizzico — vai a occhio</string>
+    <string name="warning_oven_title">La cottura non si scala in proporzione</string>
+    <string name="warning_oven_message">Controlla la cottura in anticipo: tempi e temperatura non seguono il fattore. A parità di altezza dell\'impasto, usa una teglia di diametro circa %1$s volte.</string>
+</resources>

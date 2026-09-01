@@ -1,0 +1,225 @@
+package com.ilsecondodasinistra.proportion.feature.settings
+
+import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilsecondodasinistra.proportion.core.model.ThemeMode
+import com.ilsecondodasinistra.proportion.core.transfer.ImportMode
+import com.ilsecondodasinistra.proportion.core.transfer.ProportionFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+@Composable
+fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val backupSavedMessage = stringResource(R.string.settings_backup_done)
+
+    val createBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(ProportionFile.MIME_TYPE),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.onBackup { text ->
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
+                }
+            }
+        }
+    }
+
+    val openBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.onRestoreFileChosen(context.readText(uri))
+        }
+    }
+
+    LaunchedEffect(state.backupSaved) {
+        if (state.backupSaved) {
+            snackbarHostState.showSnackbar(backupSavedMessage)
+            viewModel.onBackupMessageShown()
+        }
+    }
+
+    SettingsScreen(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onThemeChange = viewModel::onThemeChange,
+        onDynamicColourChange = viewModel::onDynamicColourChange,
+        onBackupClick = { createBackup.launch(defaultBackupName()) },
+        onRestoreClick = { openBackup.launch(arrayOf("*/*")) },
+        onMerge = { viewModel.onRestoreConfirmed(ImportMode.MERGE) },
+        onReplaceRequested = viewModel::onReplaceRequested,
+        onReplaceConfirmed = { viewModel.onRestoreConfirmed(ImportMode.REPLACE_ALL) },
+        onDismissRestore = viewModel::onRestoreDismissed,
+    )
+}
+
+/** Read on IO: a backup can be large, and this runs from a picker callback on the main thread. */
+private fun Context.readText(uri: android.net.Uri): String =
+    contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }.orEmpty()
+
+private fun defaultBackupName(): String = "proportion-backup.${ProportionFile.EXTENSION}"
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    state: SettingsUiState,
+    snackbarHostState: SnackbarHostState,
+    onThemeChange: (ThemeMode) -> Unit,
+    onDynamicColourChange: (Boolean) -> Unit,
+    onBackupClick: () -> Unit,
+    onRestoreClick: () -> Unit,
+    onMerge: () -> Unit,
+    onReplaceRequested: () -> Unit,
+    onReplaceConfirmed: () -> Unit,
+    onDismissRestore: () -> Unit,
+) {
+    Scaffold(
+        modifier = Modifier.testTag("settings_screen"),
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title)) }) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            SectionTitle(stringResource(R.string.settings_appearance))
+
+            Column(modifier = Modifier.selectableGroup()) {
+                ThemeMode.entries.forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .testTag("theme_${mode.name}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = state.themeMode == mode,
+                            onClick = { onThemeChange(mode) },
+                        )
+                        Text(
+                            text = stringResource(mode.labelRes()),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_dynamic_colour)) },
+                supportingContent = { Text(stringResource(R.string.settings_dynamic_colour_off)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.useDynamicColour,
+                        onCheckedChange = onDynamicColourChange,
+                        modifier = Modifier.testTag("dynamic_colour_switch"),
+                    )
+                },
+            )
+
+            HorizontalDivider()
+            SectionTitle(stringResource(R.string.settings_data))
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_backup)) },
+                supportingContent = { Text(stringResource(R.string.settings_backup_hint)) },
+                leadingContent = { Icon(Icons.Filled.Download, contentDescription = null) },
+                modifier = Modifier
+                    .clickable(onClick = onBackupClick)
+                    .testTag("backup_item"),
+            )
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_restore)) },
+                supportingContent = { Text(stringResource(R.string.settings_restore_hint)) },
+                leadingContent = { Icon(Icons.Filled.Upload, contentDescription = null) },
+                modifier = Modifier
+                    .clickable(onClick = onRestoreClick)
+                    .testTag("restore_item"),
+            )
+
+            HorizontalDivider()
+            SectionTitle(stringResource(R.string.settings_about))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_about_author)) },
+                supportingContent = { Text(stringResource(R.string.settings_version, appVersion())) },
+            )
+        }
+    }
+
+    RestoreDialogs(
+        step = state.restore,
+        onMerge = onMerge,
+        onReplaceRequested = onReplaceRequested,
+        onReplaceConfirmed = onReplaceConfirmed,
+        onDismiss = onDismissRestore,
+    )
+}
+
+@Composable
+private fun appVersion(): String {
+    val context = LocalContext.current
+    return remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
+        }.getOrDefault("")
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 4.dp),
+    )
+}
+
+private fun ThemeMode.labelRes(): Int = when (this) {
+    ThemeMode.SYSTEM -> R.string.settings_theme_system
+    ThemeMode.LIGHT -> R.string.settings_theme_light
+    ThemeMode.DARK -> R.string.settings_theme_dark
+}
