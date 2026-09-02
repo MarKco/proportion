@@ -1,5 +1,14 @@
 package com.ilsecondodasinistra.proportion.feature.cook
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +29,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -29,10 +39,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -47,6 +61,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionMotion
+import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.ui.R as UiR
 import com.ilsecondodasinistra.proportion.core.ui.component.LoadingState
 import com.ilsecondodasinistra.proportion.core.ui.component.WarningAction
@@ -56,12 +72,33 @@ import java.util.Locale
 @Composable
 fun CookRoute(
     onBack: () -> Unit,
+    onCookingMode: (String, ScaleConstraint?) -> Unit,
     viewModel: CookViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val shoppingMessage = state.shoppingMessage
+    val nothingToAddText = stringResource(R.string.cook_nothing_to_add)
+    val addedText = (shoppingMessage as? ShoppingMessage.Added)?.let {
+        pluralStringResource(R.plurals.cook_added_to_shopping, it.count, it.count)
+    }
+
+    LaunchedEffect(shoppingMessage) {
+        if (shoppingMessage != null) {
+            snackbarHostState.showSnackbar(
+                when (shoppingMessage) {
+                    is ShoppingMessage.Added -> addedText.orEmpty()
+                    ShoppingMessage.NothingToAdd -> nothingToAddText
+                },
+            )
+            viewModel.onShoppingMessageShown()
+        }
+    }
 
     CookScreen(
         state = state,
+        snackbarHostState = snackbarHostState,
         onBack = onBack,
         onModeChange = viewModel::onModeChange,
         onServingsChange = viewModel::onServingsChange,
@@ -73,6 +110,8 @@ fun CookRoute(
         onShowCard = viewModel::onShowCard,
         onSaveRequested = viewModel::onSaveVariantRequested,
         onSaveVariant = viewModel::onSaveVariant,
+        onAddToShoppingList = viewModel::onAddToShoppingList,
+        onStartCooking = { state.recipe?.let { onCookingMode(it.id, state.currentConstraint) } },
     )
 }
 
@@ -80,6 +119,7 @@ fun CookRoute(
 @Composable
 fun CookScreen(
     state: CookUiState,
+    snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onModeChange: (CookMode) -> Unit,
     onServingsChange: (Int) -> Unit,
@@ -91,6 +131,8 @@ fun CookScreen(
     onShowCard: (Boolean) -> Unit,
     onSaveRequested: (Boolean) -> Unit,
     onSaveVariant: (String, Boolean) -> Unit,
+    onAddToShoppingList: () -> Unit,
+    onStartCooking: () -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.testTag("cook_screen"),
@@ -107,6 +149,7 @@ fun CookScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when {
             state.isLoading -> LoadingState(modifier = Modifier.padding(padding))
@@ -115,6 +158,7 @@ fun CookScreen(
                 state = state,
                 onBackToAdjust = { onShowCard(false) },
                 onSaveRequested = { onSaveRequested(true) },
+                onStartCooking = onStartCooking,
                 modifier = Modifier.padding(padding),
             )
 
@@ -129,6 +173,7 @@ fun CookScreen(
                 onSnapAccept = onSnapAccept,
                 onShowCard = { onShowCard(true) },
                 onSaveRequested = { onSaveRequested(true) },
+                onAddToShoppingList = onAddToShoppingList,
                 modifier = Modifier.padding(padding),
             )
         }
@@ -155,6 +200,7 @@ private fun AdjustBody(
     onSnapAccept: (com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption) -> Unit,
     onShowCard: () -> Unit,
     onSaveRequested: () -> Unit,
+    onAddToShoppingList: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -187,13 +233,25 @@ private fun AdjustBody(
             )
         }
 
-        state.ovenAdvisory?.let { advisory ->
+        val ovenAdvisory = state.ovenAdvisory
+        val ovenAdvisoryTitle = stringResource(UiR.string.warning_oven_title)
+        val ovenAdvisoryText = ovenAdvisory?.let {
+            stringResource(UiR.string.warning_oven_message, it.tinDiameterRatio.format())
+        }
+        var lastOvenAdvisoryText by remember { mutableStateOf(ovenAdvisoryText.orEmpty()) }
+        if (ovenAdvisoryText != null) {
+            lastOvenAdvisoryText = ovenAdvisoryText
+        }
+        AnimatedVisibility(
+            visible = ovenAdvisory != null,
+            enter = fadeIn(tween(ProPortionMotion.BADGE_ENTER_MILLIS)) +
+                expandVertically(tween(ProPortionMotion.BADGE_ENTER_MILLIS)),
+            exit = fadeOut(tween(ProPortionMotion.BADGE_ENTER_MILLIS)) +
+                shrinkVertically(tween(ProPortionMotion.BADGE_ENTER_MILLIS)),
+        ) {
             WarningRow(
-                title = stringResource(UiR.string.warning_oven_title),
-                text = stringResource(
-                    UiR.string.warning_oven_message,
-                    advisory.tinDiameterRatio.format(),
-                ),
+                title = ovenAdvisoryTitle,
+                text = lastOvenAdvisoryText,
                 testTag = "oven_advisory",
             )
         }
@@ -202,17 +260,32 @@ private fun AdjustBody(
 
         state.lines.forEach { line ->
             CookLineRow(line = line, isBottleneck = line.lineId == state.bottleneckLineId)
+
+            val warningText = line.warningText?.let { stringResource(UiR.string.warning_non_integer, it) }
+                ?: stringResource(UiR.string.warning_too_small)
+            val warningActions = line.snaps.map { snap ->
+                WarningAction(
+                    label = stringResource(UiR.string.warning_snap_to, snap.label),
+                    testTag = "snap_${snap.option.targetQty.toInt()}",
+                    onClick = { onSnapAccept(snap.option) },
+                )
+            }
+            var lastWarningText by remember(line.lineId) { mutableStateOf(warningText) }
+            var lastWarningActions by remember(line.lineId) { mutableStateOf(warningActions) }
             if (line.hasWarning) {
+                lastWarningText = warningText
+                lastWarningActions = warningActions
+            }
+            AnimatedVisibility(
+                visible = line.hasWarning,
+                enter = fadeIn(tween(ProPortionMotion.BADGE_ENTER_MILLIS)) +
+                    expandVertically(tween(ProPortionMotion.BADGE_ENTER_MILLIS)),
+                exit = fadeOut(tween(ProPortionMotion.BADGE_ENTER_MILLIS)) +
+                    shrinkVertically(tween(ProPortionMotion.BADGE_ENTER_MILLIS)),
+            ) {
                 WarningRow(
-                    text = line.warningText?.let { stringResource(UiR.string.warning_non_integer, it) }
-                        ?: stringResource(UiR.string.warning_too_small),
-                    actions = line.snaps.map { snap ->
-                        WarningAction(
-                            label = stringResource(UiR.string.warning_snap_to, snap.label),
-                            testTag = "snap_${snap.option.targetQty.toInt()}",
-                            onClick = { onSnapAccept(snap.option) },
-                        )
-                    },
+                    text = lastWarningText,
+                    actions = lastWarningActions,
                     testTag = "warning_${line.lineId}",
                 )
             }
@@ -239,6 +312,12 @@ private fun AdjustBody(
                 modifier = Modifier.weight(1f).testTag("save_variant_button"),
             ) {
                 Text(stringResource(R.string.cook_save_variant))
+            }
+            OutlinedButton(
+                onClick = onAddToShoppingList,
+                modifier = Modifier.weight(1f).testTag("add_to_shopping_button"),
+            ) {
+                Text(stringResource(R.string.cook_add_to_shopping))
             }
             Button(
                 onClick = onShowCard,
@@ -280,7 +359,10 @@ private fun ServingsInput(state: CookUiState, onServingsChange: (Int) -> Unit) {
                 onClick = { onServingsChange(state.servingsInput - 1) },
                 modifier = Modifier.testTag("servings_minus"),
             ) {
-                Icon(Icons.Filled.Remove, contentDescription = null)
+                Icon(
+                    Icons.Filled.Remove,
+                    contentDescription = stringResource(R.string.cook_decrease_servings),
+                )
             }
             Text(
                 text = state.servingsInput.toString(),
@@ -291,7 +373,10 @@ private fun ServingsInput(state: CookUiState, onServingsChange: (Int) -> Unit) {
                 onClick = { onServingsChange(state.servingsInput + 1) },
                 modifier = Modifier.testTag("servings_plus"),
             ) {
-                Icon(Icons.Filled.Add, contentDescription = null)
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.cook_increase_servings),
+                )
             }
         }
         FactorCaption(state)
@@ -445,12 +530,22 @@ private fun CookLineRow(line: CookLine, isBottleneck: Boolean) {
                     )
                 }
             }
-            Text(
-                text = line.scaledText,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.testTag("scaled_${line.lineId}"),
-            )
+            AnimatedContent(
+                targetState = line.scaledText,
+                transitionSpec = {
+                    (fadeIn(tween(ProPortionMotion.QUANTITY_COUNT_MILLIS)) +
+                        slideInVertically(tween(ProPortionMotion.QUANTITY_COUNT_MILLIS)) { it / 4 })
+                        .togetherWith(fadeOut(tween(ProPortionMotion.QUANTITY_COUNT_MILLIS)))
+                },
+                label = "scaled_quantity",
+            ) { text ->
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.testTag("scaled_${line.lineId}"),
+                )
+            }
         }
     }
 }
@@ -462,22 +557,35 @@ private fun SaveVariantDialog(
     onConfirm: (String, Boolean) -> Unit,
 ) {
     var label by remember { mutableStateOf(suggested) }
+    var asDefault by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.cook_save_dialog_title)) },
         text = {
-            OutlinedTextField(
-                value = label,
-                onValueChange = { label = it },
-                singleLine = true,
-                label = { Text(stringResource(R.string.cook_save_dialog_label)) },
-                modifier = Modifier.testTag("variant_label_field"),
-            )
+            Column {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.cook_save_dialog_label)) },
+                    modifier = Modifier.testTag("variant_label_field"),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clickable { asDefault = !asDefault }
+                        .testTag("variant_default_row"),
+                ) {
+                    Checkbox(checked = asDefault, onCheckedChange = { asDefault = it })
+                    Text(stringResource(R.string.cook_save_dialog_default))
+                }
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(label, false) },
+                onClick = { onConfirm(label, asDefault) },
                 enabled = label.isNotBlank(),
                 modifier = Modifier.testTag("variant_save_confirm"),
             ) {

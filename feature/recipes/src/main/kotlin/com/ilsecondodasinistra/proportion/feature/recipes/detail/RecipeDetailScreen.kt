@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.proportion.feature.recipes.detail
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -88,6 +90,8 @@ fun RecipeDetailRoute(
             viewModel.onDelete()
             onBack()
         },
+        onShowOriginal = viewModel::onShowOriginal,
+        onShowVariant = viewModel::onShowVariant,
     )
 }
 
@@ -102,6 +106,8 @@ fun RecipeDetailScreen(
     onShareFile: (String) -> Unit = {},
     onFavouriteToggle: () -> Unit,
     onDelete: () -> Unit,
+    onShowOriginal: () -> Unit = {},
+    onShowVariant: (String) -> Unit = {},
 ) {
     val content = state as? RecipeDetailUiState.Content
 
@@ -145,6 +151,8 @@ fun RecipeDetailScreen(
             is RecipeDetailUiState.Content -> DetailBody(
                 content = state,
                 onCook = { onCook(state.recipe.id) },
+                onShowOriginal = onShowOriginal,
+                onShowVariant = onShowVariant,
                 modifier = Modifier.padding(padding),
             )
         }
@@ -174,7 +182,10 @@ private fun OverflowMenu(
     var expanded by remember { mutableStateOf(false) }
 
     IconButton(onClick = { expanded = true }, modifier = Modifier.testTag("detail_overflow")) {
-        Icon(Icons.Filled.MoreVert, contentDescription = null)
+        Icon(
+            Icons.Filled.MoreVert,
+            contentDescription = stringResource(R.string.recipe_detail_more_actions),
+        )
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(
@@ -220,6 +231,8 @@ private fun OverflowMenu(
 private fun DetailBody(
     content: RecipeDetailUiState.Content,
     onCook: () -> Unit,
+    onShowOriginal: () -> Unit,
+    onShowVariant: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val recipe = content.recipe
@@ -238,8 +251,29 @@ private fun DetailBody(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        if (content.cookCount > 0) {
+            Text(
+                text = pluralStringResource(
+                    R.plurals.detail_cook_count,
+                    content.cookCount,
+                    content.cookCount,
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("detail_cook_count"),
+            )
+        }
+
         if (recipe.tags.isNotEmpty()) {
             TagChipRow(tags = recipe.tags, modifier = Modifier.padding(top = 12.dp))
+        }
+
+        content.showingVariant?.let { showing ->
+            VariantBanner(
+                label = showing.label,
+                onShowOriginal = onShowOriginal,
+                modifier = Modifier.padding(top = 12.dp),
+            )
         }
 
         Button(
@@ -299,13 +333,52 @@ private fun DetailBody(
         if (content.variants.isNotEmpty()) {
             SectionTitle(stringResource(R.string.recipe_detail_variants))
             content.variants.forEach { variant ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clickable { onShowVariant(variant.id) }
+                        .testTag("detail_variant_${variant.id}"),
+                ) {
                     Text(text = variant.label, modifier = Modifier.padding(16.dp))
                 }
             }
         }
 
         Column(modifier = Modifier.padding(bottom = 32.dp)) {}
+    }
+}
+
+/** A slim assist bar above the ingredients: "Showing: Per 6 · View original". */
+@Composable
+private fun VariantBanner(
+    label: String,
+    onShowOriginal: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("detail_variant_banner"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.detail_showing_variant, label),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Text(
+            text = " · ",
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Text(
+            text = stringResource(R.string.detail_view_original),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .clickable(onClick = onShowOriginal)
+                .testTag("detail_view_original"),
+        )
     }
 }
 
@@ -326,10 +399,10 @@ private fun SectionTitle(text: String) {
  */
 @Composable
 private fun plainTextStrings(): PlainTextStrings {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     return PlainTextStrings(
-        servings = { count -> context.getString(R.string.plain_servings, count) },
-        scaledFor = { value -> context.getString(R.string.plain_scaled, value) },
+        servings = { count -> resources.getString(R.string.plain_servings, count) },
+        scaledFor = { value -> resources.getString(R.string.plain_scaled, value) },
         notPerPerson = stringResource(R.string.plain_not_per_person),
         ingredientsTitle = stringResource(R.string.plain_ingredients),
         methodTitle = stringResource(R.string.plain_method),

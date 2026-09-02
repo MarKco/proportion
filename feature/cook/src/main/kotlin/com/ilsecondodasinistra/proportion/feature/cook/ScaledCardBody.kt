@@ -1,5 +1,11 @@
 package com.ilsecondodasinistra.proportion.feature.cook
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,12 +20,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionMotion
 import com.ilsecondodasinistra.proportion.core.ui.R as UiR
 import com.ilsecondodasinistra.proportion.core.ui.component.TagChipRow
 import com.ilsecondodasinistra.proportion.core.ui.component.WarningRow
@@ -33,6 +44,7 @@ fun ScaledCardBody(
     state: CookUiState,
     onBackToAdjust: () -> Unit,
     onSaveRequested: () -> Unit,
+    onStartCooking: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val recipe = state.recipe ?: return
@@ -55,13 +67,25 @@ fun ScaledCardBody(
             TagChipRow(tags = recipe.tags, modifier = Modifier.padding(top = 10.dp))
         }
 
-        state.ovenAdvisory?.let { advisory ->
+        val ovenAdvisory = state.ovenAdvisory
+        val ovenAdvisoryTitle = stringResource(UiR.string.warning_oven_title)
+        val ovenAdvisoryText = ovenAdvisory?.let {
+            stringResource(UiR.string.warning_oven_message, it.tinDiameterRatio.format())
+        }
+        var lastOvenAdvisoryText by remember { mutableStateOf(ovenAdvisoryText.orEmpty()) }
+        if (ovenAdvisoryText != null) {
+            lastOvenAdvisoryText = ovenAdvisoryText
+        }
+        AnimatedVisibility(
+            visible = ovenAdvisory != null,
+            enter = fadeIn(tween(ProPortionMotion.BADGE_ENTER_MILLIS)) +
+                expandVertically(tween(ProPortionMotion.BADGE_ENTER_MILLIS)),
+            exit = fadeOut(tween(ProPortionMotion.BADGE_ENTER_MILLIS)) +
+                shrinkVertically(tween(ProPortionMotion.BADGE_ENTER_MILLIS)),
+        ) {
             WarningRow(
-                title = stringResource(UiR.string.warning_oven_title),
-                text = stringResource(
-                    UiR.string.warning_oven_message,
-                    advisory.tinDiameterRatio.format(),
-                ),
+                title = ovenAdvisoryTitle,
+                text = lastOvenAdvisoryText,
                 modifier = Modifier.padding(top = 12.dp),
                 testTag = "card_oven_advisory",
             )
@@ -121,12 +145,19 @@ fun ScaledCardBody(
             ) {
                 Text(stringResource(R.string.cook_show_adjust))
             }
-            Button(
+            OutlinedButton(
                 onClick = onSaveRequested,
                 modifier = Modifier.weight(1f).testTag("card_save_variant"),
             ) {
                 Text(stringResource(R.string.cook_save_variant))
             }
+        }
+
+        Button(
+            onClick = onStartCooking,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp).testTag("start_cooking_button"),
+        ) {
+            Text(stringResource(R.string.cooking_mode_start))
         }
     }
 }

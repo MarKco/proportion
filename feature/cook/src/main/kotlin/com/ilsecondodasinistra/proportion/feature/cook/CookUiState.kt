@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.proportion.feature.cook
 
+import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
@@ -36,6 +37,12 @@ sealed interface SuggestedLabel {
     data object Pantry : SuggestedLabel
 }
 
+/** Confirms what "add to shopping list" did, so the screen can show one Snackbar and then forget it. */
+sealed interface ShoppingMessage {
+    data class Added(val count: Int) : ShoppingMessage
+    data object NothingToAdd : ShoppingMessage
+}
+
 data class CookUiState(
     val isLoading: Boolean = true,
     val recipe: Recipe? = null,
@@ -61,4 +68,11 @@ data class CookUiState(
     val showCard: Boolean = false,
     val saveDialogVisible: Boolean = false,
     val suggestedLabel: SuggestedLabel = SuggestedLabel.Factor(1.0),
+    /** Cleared by [CookViewModel.onShoppingMessageShown] once shown, so it never re-fires on rotation. */
+    val shoppingMessage: ShoppingMessage? = null,
+    /**
+     * The constraint [mode] and its inputs currently resolve to, recomputed on every edit — kept
+     * here so the screen can hand it to cooking mode without querying the ViewModel directly.
+     */
+    val currentConstraint: ScaleConstraint? = null,
 )

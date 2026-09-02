@@ -86,7 +86,7 @@ fun RestoreDialogs(
             },
             confirmButton = {
                 TextButton(onClick = onDismiss, modifier = Modifier.testTag("restore_done_ok")) {
-                    Text("OK")
+                    Text(stringResource(R.string.settings_restore_ok))
                 }
             },
             modifier = Modifier.testTag("restore_done_dialog"),
@@ -98,7 +98,7 @@ fun RestoreDialogs(
             text = { Text(step.reason.message()) },
             confirmButton = {
                 TextButton(onClick = onDismiss, modifier = Modifier.testTag("restore_failed_ok")) {
-                    Text("OK")
+                    Text(stringResource(R.string.settings_restore_ok))
                 }
             },
             modifier = Modifier.testTag("restore_failed_dialog"),

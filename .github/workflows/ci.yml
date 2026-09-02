@@ -24,14 +24,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Static analysis
-        run: ./gradlew detekt lint --stacktrace
-
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest :core:model:test :core:domain:test --stacktrace
-
-      - name: Assemble
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Verify (detekt, lint, every module's unit tests, debug APK)
+        run: ./gradlew verifyAll lint --stacktrace
 
       - name: Upload test reports
         if: failure()

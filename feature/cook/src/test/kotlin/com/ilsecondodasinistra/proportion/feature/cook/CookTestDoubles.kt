@@ -3,11 +3,13 @@ package com.ilsecondodasinistra.proportion.feature.cook
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.ScaleVariantRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.ShoppingRepository
 import com.ilsecondodasinistra.proportion.core.domain.scale.BakingAdvisor
 import com.ilsecondodasinistra.proportion.core.domain.scale.DefaultRecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.scale.DiscreteAnalyser
 import com.ilsecondodasinistra.proportion.core.domain.scale.RecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
+import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledLine
 import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
 import com.ilsecondodasinistra.proportion.core.domain.unit.UnitNamer
@@ -16,6 +18,7 @@ import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
 import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
+import com.ilsecondodasinistra.proportion.core.model.ShoppingItem
 import com.ilsecondodasinistra.proportion.core.model.Tag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -105,6 +108,13 @@ class FakeRecipeRepository(initial: List<Recipe>) : RecipeRepository {
     private val stored = MutableStateFlow(initial)
     val cookedIds = mutableListOf<String>()
 
+    /** The most recent `markCooked` timestamp per recipe id. */
+    val cookedAt = mutableMapOf<String, Long>()
+
+    /** How many times `markCooked` was called in total, across every recipe id. */
+    var markCookedCalls: Int = 0
+        private set
+
     override fun observeRecipes(filter: RecipeFilter): Flow<List<Recipe>> = stored
     override fun observeRecipe(id: String): Flow<Recipe?> =
         stored.map { list -> list.firstOrNull { it.id == id } }
@@ -113,6 +123,8 @@ class FakeRecipeRepository(initial: List<Recipe>) : RecipeRepository {
     override suspend fun delete(id: String) = Unit
     override suspend fun markCooked(id: String, at: Long) {
         cookedIds += id
+        cookedAt[id] = at
+        markCookedCalls += 1
     }
     override suspend fun setFavourite(id: String, favourite: Boolean) = Unit
 }
@@ -149,6 +161,29 @@ class FakeScaleVariantRepository : ScaleVariantRepository {
     }
 
     override suspend fun delete(id: String) = Unit
+}
+
+/** One call to [ShoppingRepository.addScaled], recorded verbatim. */
+data class AddCall(val lines: List<ScaledLine>, val recipeId: String)
+
+/**
+ * Records what was sent, filtered the same way [ShoppingRepository.addScaled] documents it will be
+ * filtered (lines with nothing to buy are dropped) — merging is the real repository's job, not this
+ * double's, so it is not reproduced here.
+ */
+class FakeShoppingRepository : ShoppingRepository {
+
+    val added = mutableListOf<AddCall>()
+
+    override fun observeItems(): Flow<List<ShoppingItem>> = MutableStateFlow(emptyList())
+
+    override suspend fun addScaled(lines: List<ScaledLine>, recipeId: String) {
+        added += AddCall(lines.filter { it.isAddableToShoppingList() }, recipeId)
+    }
+
+    override suspend fun setChecked(id: String, checked: Boolean) = Unit
+    override suspend fun clearChecked() = Unit
+    override suspend fun clearAll() = Unit
 }
 
 fun testFormatter(): QuantityFormatter = QuantityFormatter(DefaultUnitConverter(), TestUnitNamer())

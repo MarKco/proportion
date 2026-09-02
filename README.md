@@ -15,8 +15,9 @@ that "salt to taste" does not scale, and that a cake baked at 1.5x does not bake
 
 ## Status
 
-Under construction. Phases 1 and 2 are done: multi-module build, design system, navigation shell,
-the scaling engine and the persistence layer, all covered by tests. The feature screens come next.
+Phases 1 to 7 are done. The app builds, installs, and does the whole job: enter a recipe, find it,
+rescale it four different ways, share it, back it up and restore it, see a dashboard, keep a
+shopping list, follow a recipe in cooking mode.
 Current progress lives in [`docs/private/IMPLEMENTATION-STATUS.md`](docs/private/IMPLEMENTATION-STATUS.md).
 
 ## Building
@@ -27,6 +28,8 @@ Requirements: JDK 21 and the Android SDK with platform 36.
 ./gradlew assembleDebug        # build the debug APK
 ./gradlew testDebugUnitTest    # unit tests
 ./gradlew detekt lint          # static analysis
+./gradlew testAll              # every module's unit tests, JVM and Android alike
+./gradlew verifyAll            # detekt + lint + every unit test + a debug APK
 ```
 
 ## Module map

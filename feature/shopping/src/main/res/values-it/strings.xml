@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shopping_title">Lista della spesa</string>
+    <string name="shopping_empty_title">Niente da comprare</string>
+    <string name="shopping_empty_body">Gli ingredienti aggiunti mentre cucini arrivano qui.</string>
+    <string name="shopping_share">Condividi</string>
+    <string name="shopping_more_actions">Altre azioni</string>
+    <string name="shopping_share_chooser">Condividi lista della spesa</string>
+    <string name="shopping_clear_checked">Rimuovi già presi</string>
+    <string name="shopping_clear_all">Svuota tutto</string>
+    <string name="shopping_clear_all_confirm_title">Svuotare tutta la lista?</string>
+    <string name="shopping_clear_all_confirm_body">Ogni articolo, preso o no, verrà rimosso.</string>
+    <string name="shopping_clear_all_confirm_yes">Svuota la lista</string>
+    <string name="shopping_clear_all_cancel">Annulla</string>
+    <plurals name="shopping_from_recipes">
+        <item quantity="one">Da %d ricetta</item>
+        <item quantity="other">Da %d ricette</item>
+    </plurals>
+    <string name="shopping_list_title">Lista della spesa</string>
+    <string name="shopping_list_checked_title">Già presi</string>
+    <string name="shopping_attribution">Condiviso da ProPortion</string>
+</resources>

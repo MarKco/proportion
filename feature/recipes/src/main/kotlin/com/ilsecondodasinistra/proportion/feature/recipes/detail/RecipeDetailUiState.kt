@@ -11,6 +11,12 @@ data class DetailLine(
     val note: String?,
 )
 
+/** The saved scaling currently on screen, if any. Null means the recipe as written. */
+data class ShowingVariant(
+    val variantId: String,
+    val label: String,
+)
+
 sealed interface RecipeDetailUiState {
     data object Loading : RecipeDetailUiState
 
@@ -21,5 +27,12 @@ sealed interface RecipeDetailUiState {
         val recipe: Recipe,
         val lines: List<DetailLine>,
         val variants: List<ScaleVariant>,
+        /**
+         * The saved scaling currently applied, or null when showing the recipe as entered — either
+         * because there is no default variant, the user asked for the original, or the default
+         * variant's constraint no longer resolves against the recipe as it is now.
+         */
+        val showingVariant: ShowingVariant? = null,
+        val cookCount: Int = recipe.cookCount,
     ) : RecipeDetailUiState
 }

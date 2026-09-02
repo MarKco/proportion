@@ -3,7 +3,6 @@ package com.ilsecondodasinistra.proportion.feature.cook
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
@@ -29,13 +28,14 @@ class CookViewModelTest {
         recipes: FakeRecipeRepository = FakeRecipeRepository(
             listOf(CookTestData.cake, CookTestData.ovenCake, CookTestData.eggRecipe, CookTestData.jam),
         ),
+        shopping: FakeShoppingRepository = FakeShoppingRepository(),
     ) = CookViewModel(
         savedStateHandle = SavedStateHandle(mapOf("recipeId" to recipe.id)),
         recipeRepository = recipes,
         variantRepository = variants,
+        shoppingRepository = shopping,
         scaler = testScaler(),
         formatter = testFormatter(),
-        time = TimeProvider { 5_000L },
     )
 
     private fun lineOf(state: CookUiState, name: String) =
@@ -228,7 +228,7 @@ class CookViewModelTest {
     }
 
     @Test
-    fun `opening the card marks the recipe as cooked once`() = runTest {
+    fun `showing the scaled card does not mark the recipe cooked — cooking mode does that`() = runTest {
         val recipes = FakeRecipeRepository(listOf(CookTestData.cake))
         val vm = viewModel(recipes = recipes)
         vm.uiState.test {
@@ -242,7 +242,7 @@ class CookViewModelTest {
             assertThat(expectMostRecentItem().showCard).isTrue()
         }
 
-        assertThat(recipes.cookedIds).containsExactly("r-cake")
+        assertThat(recipes.markCookedCalls).isEqualTo(0)
     }
 
     @Test
@@ -320,5 +320,56 @@ class CookViewModelTest {
 
             assertThat(lineOf(expectMostRecentItem(), "Lievito").hasWarning).isTrue()
         }
+    }
+
+    @Test
+    fun `adding to the shopping list sends the scaled lines, not the originals`() = runTest {
+        val shopping = FakeShoppingRepository()
+        val model = viewModel(shopping = shopping)
+        advanceUntilIdle()
+
+        model.onModeChange(CookMode.FACTOR)
+        model.onFactorChange("2")
+        advanceUntilIdle()
+        model.onAddToShoppingList()
+        advanceUntilIdle()
+
+        val flour = shopping.added.single().lines.first { it.ingredientName == "Farina" }
+        assertThat(flour.scaledQty).isWithin(1e-9).of(600.0)
+    }
+
+    @Test
+    fun `approximate lines are not added, because there is no amount to buy`() = runTest {
+        val shopping = FakeShoppingRepository()
+        val model = viewModel(shopping = shopping)
+        advanceUntilIdle()
+
+        model.onAddToShoppingList()
+        advanceUntilIdle()
+
+        assertThat(shopping.added.single().lines.none { !it.isScaled }).isTrue()
+    }
+
+    @Test
+    fun `the screen confirms how many lines went to the list`() = runTest {
+        val model = viewModel(shopping = FakeShoppingRepository())
+        advanceUntilIdle()
+
+        model.onAddToShoppingList()
+        advanceUntilIdle()
+
+        assertThat(model.uiState.value.shoppingMessage).isInstanceOf(ShoppingMessage.Added::class.java)
+    }
+
+    @Test
+    fun `dismissing the confirmation clears it, so it does not reappear on rotation`() = runTest {
+        val model = viewModel(shopping = FakeShoppingRepository())
+        advanceUntilIdle()
+        model.onAddToShoppingList()
+        advanceUntilIdle()
+
+        model.onShoppingMessageShown()
+
+        assertThat(model.uiState.value.shoppingMessage).isNull()
     }
 }

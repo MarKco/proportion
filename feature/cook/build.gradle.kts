@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.robolectric)

@@ -7,8 +7,6 @@ import com.ilsecondodasinistra.proportion.core.domain.scale.DiscreteAnalyser
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleResult
 import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
-import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
-import com.ilsecondodasinistra.proportion.core.domain.unit.UnitNamer
 import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
@@ -17,16 +15,8 @@ import org.junit.Test
 
 class PlainTextFormatterTest {
 
-    private val namer = UnitNamer { unit, qty ->
-        when (unit) {
-            MeasureUnit.GRAM -> "g"
-            MeasureUnit.EGG -> if (qty == 1.0) "uovo" else "uova"
-            MeasureUnit.TO_TASTE -> "q.b."
-            else -> unit.name.lowercase()
-        }
-    }
     private val converter = DefaultUnitConverter()
-    private val formatter = QuantityFormatter(converter, namer)
+    private val formatter = testFormatter()
 
     private val strings = PlainTextStrings(
         servings = { "Per $it persone" },

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_title">Home</string>
+    <string name="home_empty_title">No recipes to show yet</string>
+    <string name="home_empty_body">Add your first recipe and it will show up here, ready to scale.</string>
+    <string name="home_empty_action">Add a recipe</string>
+
+    <string name="home_numbers_title">Your library</string>
+    <string name="home_uncategorised">%d without a course</string>
+
+    <string name="home_continue_title">Continue cooking</string>
+    <string name="home_continue_showing">Saved as %1$s</string>
+
+    <string name="home_most_cooked_title">Most cooked</string>
+    <string name="home_favourites_title">Favourites</string>
+
+    <string name="home_suggestion_title">What shall I cook?</string>
+    <string name="home_suggestion_reshuffle">Try another</string>
+    <string name="home_suggestion_none">No recipe carries this tag yet</string>
+    <string name="home_suggestion_all_tags">All courses</string>
+    <string name="home_cook_action">Cook</string>
+
+    <plurals name="home_recipes_count">
+        <item quantity="one">%d recipe</item>
+        <item quantity="other">%d recipes</item>
+    </plurals>
+    <plurals name="home_cooks_count">
+        <item quantity="one">%d cook logged</item>
+        <item quantity="other">%d cooks logged</item>
+    </plurals>
+    <plurals name="home_favourites_count">
+        <item quantity="one">%d favourite</item>
+        <item quantity="other">%d favourites</item>
+    </plurals>
+</resources>

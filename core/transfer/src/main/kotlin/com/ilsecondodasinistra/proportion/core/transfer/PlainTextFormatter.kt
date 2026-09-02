@@ -54,7 +54,7 @@ object PlainTextFormatter {
         }
         val width = rows.maxOfOrNull { it.first.length } ?: 0
         rows.forEach { (name, quantity) ->
-            appendLine("- ${name.padEnd(width)}  $quantity")
+            appendLine(alignedRow(name, width, quantity))
         }
 
         if (recipe.steps.isNotEmpty()) {

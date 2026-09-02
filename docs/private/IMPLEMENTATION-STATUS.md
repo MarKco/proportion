@@ -2,27 +2,49 @@
 
 ## Resume here (read this first after a break)
 
-**Where things stand:** phases 1 to 5 are done. The app builds, installs, and does the whole core
-job: enter a recipe, find it, rescale it four different ways, share it, back it up and restore it.
-217 tests pass; detekt and lint are clean.
+**Where things stand:** phases 1 to 7 are done — v1 is feature-complete and polished. The app
+builds, installs, and does the whole job: enter a recipe, find it, rescale it four different ways,
+share it, back it up and restore it, see a dashboard, keep a shopping list, follow a recipe in
+cooking mode. Translations are complete and parity-checked, accessibility has had a real on-device
+pass (TalkBack + large text), the two motion animations the design system always promised are
+wired up, `docs/public` and `docs/manual` exist in both languages, and a release-signing mechanism
+is ready (no keystore created yet — that's Marco's own step whenever he has one; see
+`docs/private/release-checklist.md`). `./gradlew verifyAll` is green (detekt, lint, every test,
+a debug APK) and `./gradlew assembleRelease` succeeds unsigned. Verified end to end on a Fairphone 3
+(Android 13) on 2026-09-02.
 
-**What is next:** phase 6 — the dashboard, the persistent shopping list, cooking mode, favourites
-and the cook counter. Write `docs/private/plans/<date>-phase-6-....md` first, following the shape of
-the phase 4 and 5 plans, then implement task by task.
+**What is next:** nothing is currently planned past phase 7. Two known, deliberately-deferred
+follow-ups if v1.1 work starts: (1) a UI for setting a variant as default already exists and works
+(phase 6), but per-app language selection independent of the system does not — the data-layer
+plumbing is there (`PreferencesRepository.setLanguage`) but nothing calls
+`AppCompatDelegate.setApplicationLocales` or offers a picker; (2) `docs/public/en/`'s screenshots
+are still Italian-locale copies, disclosed in the doc itself, pending a design review Marco wants
+to do before recapturing screenshots for both `docs/public` and `docs/manual`.
+
+Phase 6's and phase 7's per-task briefs, reports and full progress ledgers (including every ruling
+made while executing them) are kept at `.superpowers/sdd/2026-09-01-phase-6-home-shopping-cooking-mode/`
+and `.superpowers/sdd/2026-09-02-phase-7-polish/` for the record; nothing there needs restoring or
+resuming any more.
 
 **How to build and check:**
 
 ```bash
 export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # or Android Studio's bundled JBR
-./gradlew detekt testDebugUnitTest :core:model:test :core:domain:test :core:transfer:test assembleDebug
+./gradlew verifyAll        # detekt + every module's unit tests + a debug APK
+./gradlew testAll          # just the tests, for the fast loop
 ./gradlew installDebug     # a Fairphone 3 (Android 13) is usually attached over USB
 ```
+
+`testAll` asks each module for whichever test task it actually has (`test` for the JVM modules,
+`testDebugUnitTest` for the Android ones), so a module added later cannot silently go untested.
+Android Studio has both as shared run configurations in `.run/`: **All tests** and **Full check**.
 
 Screenshots for a device walkthrough: `adb shell screencap -p /sdcard/x.png && adb pull /sdcard/x.png`.
 
 **Read next, in this order:** `specs/2026-09-01-proportion-v1-design.md` (the approved design),
 `plans/` (one per phase), `architecture.md`, `scaling-engine.md`, `data-model.md`,
-`proportion-format.md`, `adr/`.
+`proportion-format.md`, `localization.md`, `adr/`, `release-checklist.md`. Then, for the
+user-facing (not developer) side: `docs/public/` and `docs/manual/`.
 
 **House rules that are easy to break by accident:**
 
@@ -40,7 +62,8 @@ Living checklist, updated as work progresses. If a session ends, this file says 
 
 **Legend:** `[ ]` not started · `[~]` in progress · `[x]` done
 
-Last updated: 2026-09-01 (phase 5 complete, 217 tests green, verified on a Fairphone 3 / Android 13)
+Last updated: 2026-09-02 (phases 1–7 complete, `verifyAll` green including `lint`, verified on a
+Fairphone 3 / Android 13)
 
 ## Phase 0 — Design
 - [x] Brainstorming and decisions
@@ -50,7 +73,8 @@ Last updated: 2026-09-01 (phase 5 complete, 217 tests green, verified on a Fairp
 - [x] Implementation plan, phase 3 — `docs/private/plans/2026-09-01-phase-3-enter-and-browse.md`
 - [x] Implementation plan, phase 4 — `docs/private/plans/2026-09-01-phase-4-cook-this-recipe.md`
 - [x] Implementation plan, phase 5 — `docs/private/plans/2026-09-01-phase-5-data-exchange.md`
-- [ ] Implementation plans for phases 6–7 (written one block at a time)
+- [x] Implementation plan, phase 6 — `docs/private/plans/2026-09-01-phase-6-home-shopping-cooking-mode.md`
+- [x] Implementation plan, phase 7 — `docs/private/plans/2026-09-02-phase-7-polish.md`
 
 ## Phase 1 — Foundations
 - [x] Gradle multi-module scaffolding + version catalog (AGP 9.4.0, Gradle 9.7.1, Kotlin 2.3.21)
@@ -88,21 +112,79 @@ Last updated: 2026-09-01 (phase 5 complete, 217 tests green, verified on a Fairp
 - [x] Share as text / as a file from the recipe; opening a `.proportion` file lands in the restore flow
 - [x] Developer docs: architecture, module map, data model, scaling engine, format, contributing, 4 ADRs
 
-## Phase 6 — Home, shopping, cooking mode  <-- NEXT (needs its implementation plan first)
-- [ ] Dashboard cards
-- [ ] Persistent shopping list
-- [ ] Cooking mode, favourites, cook counter
+## Phase 6 — Home, shopping, cooking mode  <-- DONE
+- [x] Task 1 — `DashboardSummariser` + `RecipePicker` in `:core:domain` (15 tests, reviewed clean)
+- [x] Task 2 — `DonutChart` + `sweepAngles` in `:core:designsystem` (3 tests, reviewed; the entrance
+      animation needed a state flag, `animateFloatAsState` never animates towards a constant target)
+- [x] Task 3 — dashboard cards in `:feature:home` (8 tests; `Random` needed a Hilt qualifier)
+- [x] Task 4 — `ShoppingListFormatter` in `:core:transfer` (5 tests; row alignment now shared with
+      `PlainTextFormatter` through `AlignedRow.kt`)
+- [x] Task 5 — shopping screen: check/clear-checked/clear-all with a real cancel button, share (11 tests)
+- [x] Task 6 — "add to shopping list" from the scale screen, confirmed by a Snackbar (22+10 tests)
+- [x] Task 7 — cooking mode: keep-screen-on, checkable steps, scaled ingredients sheet, the scaling
+      travels the route as Base64 JSON (51 tests)
+- [x] Task 8 — default variant shown on the recipe detail ("showing: <label> · view original") +
+      cook counter (14 tests)
+- [x] Task 9 — verified end to end on a Fairphone 3; found and fixed a double-cook-count bug live,
+      and (post-walkthrough) the missing "set as default" checkbox in the save-scaling dialog
 
-## Phase 7 — Polish
-- [ ] Full it/en translations
-- [ ] docs/public (it + en)
-- [ ] docs/manual (it + en) — **with real screenshots captured from the test device** (Fairphone 3,
-      `adb shell screencap`) and a walkthrough of each flow with worked examples:
-      enter a recipe, rescale by servings, fix one ingredient, "with what I have", save a variant,
-      share, back up and restore
+## Phase 7 — Polish  <-- DONE
+Plan: `docs/private/plans/2026-09-02-phase-7-polish.md`. It opens with a direct audit of the current
+tree — translations turned out to already be complete (a scripted key-parity check found zero
+mismatches across every module); the real gaps are two hardcoded `Text("OK")` calls, 23 icons with
+`contentDescription = null` (some legitimately decorative, several genuinely missing), two declared
+but unused motion constants, empty `docs/public`/`docs/manual` folders, a stale README, a CI
+workflow with a hand-maintained test list, and no release signing config.
+
+- [x] Task 1 — the last translation/CI-hygiene gaps (2 hardcoded strings, CI uses `verifyAll`, README refresh)
+- [x] Task 2 — accessibility pass. Added real content descriptions on 4 icon-only controls
+      (`cook_decrease_servings`/`cook_increase_servings`, `shopping_more_actions`,
+      `recipe_detail_more_actions`); left icons beside visible text as `null` on purpose (adding a
+      description there would double-announce). On-device TalkBack walkthrough on the Fairphone 3
+      (via `uiautomator dump`, the same accessibility-node data TalkBack reads) found and fixed
+      **three real bugs invisible to a static grep**: Settings' theme radio rows and its
+      dynamic-colour switch had no merged semantics (TalkBack announced "Radio button, not checked"
+      with no label) — fixed with `Modifier.selectable`/`toggleable` + `role` on the row and the
+      inner control's own click handler set to `null`; cooking mode's "Ingredienti" FAB text was
+      visible but never exposed to accessibility at all — fixed with an explicit
+      `contentDescription` reusing the existing string. Large-text tested at `font_scale` 1.3 (the
+      device's real ceiling) and 2.0 (a harder stress test): nothing truncates, clips, or pushes a
+      primary action off-screen at either scale; the only cosmetic issue is the three action-button
+      labels on the scale screen wrapping awkwardly at 200% (not a phase-7 blocker — flagged as a
+      possible follow-up polish item).
+- [x] Task 3 — the two animations `ProPortionMotion` already promised. `WarningRow`'s three call
+      sites (oven advisory ×2, per-line warning) now animate in/out with `AnimatedVisibility`
+      (`BADGE_ENTER_MILLIS`); the scaled-quantity text crossfades between two pre-formatted strings
+      via `AnimatedContent` (`QUANTITY_COUNT_MILLIS`) — never an interpolated number, so no
+      arithmetic entered the composable. A `remember`-scoped "last known text" (keyed per line for
+      the per-line warning) makes the exit animation fade out the real prior message instead of
+      blanking. Verified live on device: mid-crossfade screenshots captured, no stale content.
+- [x] Task 4 — `docs/public/{it,en}/{README,privacy,changelog}.md` — every feature claim traced
+      back to the design spec and this file's own completed phases; GPLv3 stated; no employer
+      mention. Screenshots reused between `it/` and `en/` since both show the Italian-locale UI —
+      a real English-locale recapture is a fair follow-up, not a phase-7 blocker.
+- [x] Task 5 — `docs/manual/{it,en}/{manuale,manual}.md`, all ten flows, one worked example (a
+      simple apple cake) throughout, every quoted button/label checked against the real
+      `values-it/strings.xml`. **Screenshots deliberately deferred**: Marco wants the visual design
+      reviewed first, so capturing now would mean redoing them after a revision. ~20 placeholders
+      mark exactly where each screenshot goes and what it must show; the English manual's intro
+      notes the real screenshots need an English-locale device build to match, not a relabelled
+      Italian one. Next step whenever the design settles: connect the Fairphone 3 unlocked, follow
+      each placeholder's description, drop the PNGs into `docs/manual/{it,en}/screenshots/`.
+- [x] Task 6 — `docs/private/localization.md`, `release-checklist.md`. Found a real gap while
+      writing it: `AppCompatDelegate.setApplicationLocales` is never called anywhere and Settings
+      has no language picker — the spec's "per-app language independent of system" is only
+      half-built (`PreferencesRepository.setLanguage`/`UserPreferences.language` exist, unused by
+      any screen). `docs/public/{it,en}/README.md` and `changelog.md` (task 4) claimed this worked;
+      corrected all four files to say the language follows the system, with the per-app override
+      "ready at the data layer but not yet reachable from any screen." A UI + wiring for this is a
+      fair v1.1 follow-up, not a phase-7 blocker.
+- [x] Task 7 — release signing mechanism. `app/build.gradle.kts` reads
+      `RELEASE_STORE_FILE`/`RELEASE_STORE_PASSWORD`/`RELEASE_KEY_ALIAS`/`RELEASE_KEY_PASSWORD` from
+      `local.properties` (already gitignored, machine-specific — Marco's call to fill in with a
+      real keystore whenever he has one); absent or incomplete, `assembleRelease` stays unsigned
+      exactly as before. No keystore, password, or template file was created.
 - [x] docs/private (architecture, data model, scaling engine, format, ADRs) — done in phase 5
-- [ ] Accessibility pass
-- [ ] Release preparation
 
 ## Build environment (verified 2026-09-01)
 - Gradle 9.7.1 wrapper, AGP 9.4.0, Kotlin 2.3.21, KSP 2.3.11, Hilt 2.60.1, Room 2.8.4.

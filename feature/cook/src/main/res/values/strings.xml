@@ -5,6 +5,8 @@
     <string name="cook_mode_ingredient">Ingredient</string>
     <string name="cook_mode_factor">Factor</string>
     <string name="cook_mode_pantry">Pantry</string>
+    <string name="cook_decrease_servings">Decrease servings</string>
+    <string name="cook_increase_servings">Increase servings</string>
     <string name="cook_from_servings">from %1$d · factor %2$s</string>
     <string name="cook_factor_only">factor %1$s</string>
     <string name="cook_pick_ingredient">Tap the ingredient you want to fix</string>
@@ -20,6 +22,7 @@
     <string name="cook_save_dialog_title">Save this scaling</string>
     <string name="cook_save_dialog_label">Name</string>
     <string name="cook_save_dialog_confirm">Save</string>
+    <string name="cook_save_dialog_default">Show this scaling by default when opening the recipe</string>
     <string name="cook_save_dialog_cancel">Cancel</string>
     <string name="cook_label_servings">For %1$s servings</string>
     <string name="cook_label_factor">Factor %1$s</string>
@@ -32,4 +35,16 @@
     <string name="cook_steps">Method</string>
     <string name="cook_ingredients">Ingredients</string>
     <string name="cook_achievable_card">For %1$s servings</string>
+    <string name="cook_add_to_shopping">Add to shopping list</string>
+    <plurals name="cook_added_to_shopping">
+        <item quantity="one">%d item added to the shopping list</item>
+        <item quantity="other">%d items added to the shopping list</item>
+    </plurals>
+    <string name="cook_nothing_to_add">Nothing to add: these ingredients have no amount to buy</string>
+    <string name="cooking_mode_start">Start cooking</string>
+    <string name="cooking_mode_title">Cooking</string>
+    <string name="cooking_mode_progress">%1$d / %2$d</string>
+    <string name="cooking_mode_ingredients">Ingredients</string>
+    <string name="cooking_mode_close">Close</string>
+    <string name="cooking_mode_no_steps">This recipe has no steps: check the ingredients instead</string>
 </resources>

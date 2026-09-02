@@ -4,15 +4,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.ScaleVariantRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.ShoppingRepository
 import com.ilsecondodasinistra.proportion.core.domain.scale.AvailableAmount
 import com.ilsecondodasinistra.proportion.core.domain.scale.RecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleError
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleResult
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleWarning
+import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledLine
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledRecipe
 import com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
@@ -39,9 +40,9 @@ class CookViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val recipeRepository: RecipeRepository,
     private val variantRepository: ScaleVariantRepository,
+    private val shoppingRepository: ShoppingRepository,
     private val scaler: RecipeScaler,
     private val formatter: QuantityFormatter,
-    private val time: TimeProvider,
 ) : ViewModel() {
 
     private val recipeId: String = savedStateHandle.toRoute<CookRouteKey>().recipeId
@@ -50,7 +51,12 @@ class CookViewModel @Inject constructor(
     val uiState: StateFlow<CookUiState> = _uiState.asStateFlow()
 
     private var recipe: Recipe? = null
-    private var markedCooked = false
+
+    /**
+     * The domain-level lines behind the current [CookUiState.lines], kept so "add to shopping"
+     * sends what was actually scaled.
+     */
+    private var lastScaledLines: List<ScaledLine> = emptyList()
 
     init {
         viewModelScope.launch {
@@ -144,16 +150,41 @@ class CookViewModel @Inject constructor(
         recompute()
     }
 
+    /**
+     * Showing the scaled card does not count as cooking any more — cooking mode is what marks the
+     * recipe cooked (§7.5), and counting both meant one session showed as two cooks.
+     */
     fun onShowCard(show: Boolean) {
         _uiState.update { it.copy(showCard = show) }
-        if (show && !markedCooked) {
-            markedCooked = true
-            viewModelScope.launch { recipeRepository.markCooked(recipeId, time.now()) }
-        }
     }
 
     fun onSaveVariantRequested(visible: Boolean) {
         _uiState.update { it.copy(saveDialogVisible = visible) }
+    }
+
+    /**
+     * Sends the currently scaled lines, not the recipe's originals. [ShoppingRepository.addScaled]
+     * already drops lines with no amount to buy and merges compatible units, so none of that is
+     * repeated here — only counted, via [isAddableToShoppingList], to phrase the confirmation.
+     */
+    fun onAddToShoppingList() {
+        val lines = lastScaledLines
+        val addableCount = lines.count { it.isAddableToShoppingList() }
+
+        if (addableCount == 0) {
+            _uiState.update { it.copy(shoppingMessage = ShoppingMessage.NothingToAdd) }
+            return
+        }
+
+        viewModelScope.launch {
+            shoppingRepository.addScaled(lines, recipeId)
+            _uiState.update { it.copy(shoppingMessage = ShoppingMessage.Added(addableCount)) }
+        }
+    }
+
+    /** Clears the confirmation once the Snackbar has shown it, so rotation cannot replay it. */
+    fun onShoppingMessageShown() {
+        _uiState.update { it.copy(shoppingMessage = null) }
     }
 
     fun onSaveVariant(label: String, asDefault: Boolean) {
@@ -196,31 +227,45 @@ class CookViewModel @Inject constructor(
 
         if (constraint == null) {
             // An empty or half-typed input is not an error: keep showing the recipe as it stands.
-            _uiState.update { it.copy(lines = current.unscaledLines(), suggestedLabel = it.suggestedLabel) }
+            lastScaledLines = emptyList()
+            _uiState.update {
+                it.copy(lines = current.unscaledLines(), suggestedLabel = it.suggestedLabel, currentConstraint = null)
+            }
             return
         }
 
         when (val result = scaler.scale(current, constraint)) {
-            is ScaleResult.Failure -> _uiState.update {
-                it.copy(error = result.reason.toCookError(), lines = current.unscaledLines())
+            is ScaleResult.Failure -> {
+                lastScaledLines = emptyList()
+                _uiState.update {
+                    it.copy(
+                        error = result.reason.toCookError(),
+                        lines = current.unscaledLines(),
+                        currentConstraint = constraint,
+                    )
+                }
             }
 
-            is ScaleResult.Success -> _uiState.update { state ->
-                state.copy(
-                    error = null,
-                    factor = result.scaled.factor,
-                    servings = result.scaled.servings,
-                    lines = result.scaled.toLines(current),
-                    ovenAdvisory = result.scaled.ovenAdvisory(),
-                    bottleneckLineId = result.scaled.bottleneckLineId,
-                    leftovers = result.scaled.leftoverUi(current),
-                    servingsInput = if (state.mode == CookMode.SERVINGS) {
-                        state.servingsInput
-                    } else {
-                        result.scaled.servings?.roundedServings() ?: state.servingsInput
-                    },
-                    suggestedLabel = state.suggestedLabelFor(result.scaled),
-                )
+            is ScaleResult.Success -> {
+                lastScaledLines = result.scaled.lines
+                _uiState.update { state ->
+                    state.copy(
+                        error = null,
+                        factor = result.scaled.factor,
+                        servings = result.scaled.servings,
+                        lines = result.scaled.toLines(current),
+                        ovenAdvisory = result.scaled.ovenAdvisory(),
+                        bottleneckLineId = result.scaled.bottleneckLineId,
+                        leftovers = result.scaled.leftoverUi(current),
+                        servingsInput = if (state.mode == CookMode.SERVINGS) {
+                            state.servingsInput
+                        } else {
+                            result.scaled.servings?.roundedServings() ?: state.servingsInput
+                        },
+                        suggestedLabel = state.suggestedLabelFor(result.scaled),
+                        currentConstraint = constraint,
+                    )
+                }
             }
         }
     }
@@ -321,3 +366,9 @@ class CookViewModel @Inject constructor(
 
     private fun Double.roundedServings(): Int = kotlin.math.round(this).toInt().coerceAtLeast(1)
 }
+
+/**
+ * Mirrors the filter `ShoppingRepositoryImpl.addScaled` applies in `core/data` — kept here only to
+ * phrase the confirmation, not to decide what is sent. Must be kept in sync if that rule changes.
+ */
+internal fun ScaledLine.isAddableToShoppingList(): Boolean = isScaled && scaledQty != null

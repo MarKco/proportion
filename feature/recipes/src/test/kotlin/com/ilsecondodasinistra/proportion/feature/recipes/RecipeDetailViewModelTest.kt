@@ -6,7 +6,9 @@ import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.transfer.PlainTextStrings
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
+import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
+import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
 import com.ilsecondodasinistra.proportion.feature.recipes.detail.RecipeDetailUiState
 import com.ilsecondodasinistra.proportion.feature.recipes.detail.RecipeDetailViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,12 +29,22 @@ class RecipeDetailViewModelTest {
     private val recipes = FakeRecipeRepository(listOf(TestData.cake, TestData.risotto))
     private val variants = FakeScaleVariantRepository()
 
-    private fun viewModel(id: String = "r-cake") = RecipeDetailViewModel(
+    /**
+     * [recipe] and [variants] override the shared fakes above with fresh ones seeded exactly as
+     * given, for tests that need a precise recipe state or hand-built variants; omitting them keeps
+     * using (and can still mutate through) the shared [recipes] / [variants] fakes.
+     */
+    private fun viewModel(
+        id: String = "r-cake",
+        recipe: Recipe? = null,
+        variants: List<ScaleVariant>? = null,
+    ) = RecipeDetailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("recipeId" to id)),
-        recipeRepository = recipes,
-        variantRepository = variants,
-        transferRepository = FakeTransferRepository(listOf(TestData.cake, TestData.risotto)),
+        recipeRepository = recipe?.let { FakeRecipeRepository(listOf(it, TestData.risotto)) } ?: recipes,
+        variantRepository = variants?.let { FakeScaleVariantRepository(it) } ?: this.variants,
+        transferRepository = FakeTransferRepository(listOf(recipe ?: TestData.cake, TestData.risotto)),
         formatter = testFormatter(),
+        scaler = testScaler(),
     )
 
     @Test
@@ -79,6 +91,97 @@ class RecipeDetailViewModelTest {
             val content = expectMostRecentItem() as RecipeDetailUiState.Content
 
             assertThat(content.variants).isEmpty()
+        }
+    }
+
+    @Test
+    fun `a recipe with a default variant opens at that scaling`() = runTest {
+        val defaultVariantForSix = testScaleVariant(
+            id = "variant-six",
+            recipeId = "r-cake",
+            label = "Per 6",
+            constraint = ScaleConstraint.ByServings(6.0),
+            isDefault = true,
+        )
+
+        val model = viewModel(variants = listOf(defaultVariantForSix))
+        model.uiState.test {
+            advanceUntilIdle()
+            val content = expectMostRecentItem() as RecipeDetailUiState.Content
+
+            assertThat(content.showingVariant?.label).isEqualTo("Per 6")
+            assertThat(content.lines.first { it.name == "Farina" }.quantityText).isEqualTo("450 g")
+        }
+    }
+
+    @Test
+    fun `a recipe without a default variant opens as written`() = runTest {
+        val model = viewModel(variants = emptyList())
+        model.uiState.test {
+            advanceUntilIdle()
+
+            assertThat((expectMostRecentItem() as RecipeDetailUiState.Content).showingVariant).isNull()
+        }
+    }
+
+    @Test
+    fun `view original goes back to the recipe as entered`() = runTest {
+        val defaultVariantForSix = testScaleVariant(
+            id = "variant-six",
+            recipeId = "r-cake",
+            label = "Per 6",
+            constraint = ScaleConstraint.ByServings(6.0),
+            isDefault = true,
+        )
+
+        val model = viewModel(variants = listOf(defaultVariantForSix))
+        model.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            model.onShowOriginal()
+            advanceUntilIdle()
+            val content = expectMostRecentItem() as RecipeDetailUiState.Content
+
+            assertThat(content.showingVariant).isNull()
+            assertThat(content.lines.first { it.name == "Farina" }.quantityText).isEqualTo("300 g")
+        }
+    }
+
+    @Test
+    fun `a variant whose constraint no longer applies falls back to the original instead of failing`() =
+        runTest {
+            // "l-deleted" does not match any line on TestData.cake, exactly as if the ingredient
+            // line the variant was built on had since been removed from the recipe.
+            val variantOnDeletedLine = testScaleVariant(
+                id = "variant-deleted",
+                recipeId = "r-cake",
+                label = "Two eggs",
+                constraint = ScaleConstraint.ByIngredient(
+                    lineId = "l-deleted",
+                    qty = 2.0,
+                    unit = MeasureUnit.EGG,
+                ),
+                isDefault = true,
+            )
+
+            val model = viewModel(variants = listOf(variantOnDeletedLine))
+            model.uiState.test {
+                advanceUntilIdle()
+                val content = expectMostRecentItem() as RecipeDetailUiState.Content
+
+                assertThat(content.showingVariant).isNull()
+                assertThat(content.lines).isNotEmpty()
+            }
+        }
+
+    @Test
+    fun `the detail reports how many times the recipe was cooked`() = runTest {
+        val model = viewModel(recipe = TestData.cake.copy(cookCount = 4))
+        model.uiState.test {
+            advanceUntilIdle()
+
+            assertThat((expectMostRecentItem() as RecipeDetailUiState.Content).cookCount).isEqualTo(4)
         }
     }
 

@@ -18,7 +18,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ilsecondodasinistra.proportion.feature.cook.navigation.cookScreen
+import com.ilsecondodasinistra.proportion.feature.cook.navigation.cookingModeScreen
 import com.ilsecondodasinistra.proportion.feature.cook.navigation.navigateToCook
+import com.ilsecondodasinistra.proportion.feature.cook.navigation.navigateToCookingMode
 import com.ilsecondodasinistra.proportion.feature.editor.navigation.editorScreen
 import com.ilsecondodasinistra.proportion.feature.editor.navigation.navigateToEditRecipe
 import com.ilsecondodasinistra.proportion.feature.editor.navigation.navigateToNewRecipe
@@ -66,7 +68,11 @@ fun ProPortionApp(
             startDestination = startDestination,
             modifier = Modifier.padding(padding),
         ) {
-            homeScreen()
+            homeScreen(
+                onRecipeClick = navController::navigateToRecipeDetail,
+                onCook = navController::navigateToCook,
+                onAddRecipe = navController::navigateToNewRecipe,
+            )
 
             recipesScreen(
                 onRecipeClick = navController::navigateToRecipeDetail,
@@ -81,7 +87,12 @@ fun ProPortionApp(
 
             editorScreen(onDone = { navController.popBackStack() })
 
-            cookScreen(onBack = { navController.popBackStack() })
+            cookScreen(
+                onBack = { navController.popBackStack() },
+                onCookingMode = navController::navigateToCookingMode,
+            )
+
+            cookingModeScreen(onBack = { navController.popBackStack() })
 
             shoppingScreen()
             settingsScreen()

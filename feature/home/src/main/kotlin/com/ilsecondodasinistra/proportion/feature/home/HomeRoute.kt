@@ -7,6 +7,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object HomeRoute
 
-fun NavGraphBuilder.homeScreen() {
-    composable<HomeRoute> { HomeScreen() }
+fun NavGraphBuilder.homeScreen(
+    onRecipeClick: (String) -> Unit,
+    onCook: (String) -> Unit,
+    onAddRecipe: () -> Unit,
+) {
+    composable<HomeRoute> {
+        HomeRoute(onRecipeClick = onRecipeClick, onCook = onCook, onAddRecipe = onAddRecipe)
+    }
 }

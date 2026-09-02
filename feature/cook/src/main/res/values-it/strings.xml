@@ -5,6 +5,8 @@
     <string name="cook_mode_ingredient">Ingrediente</string>
     <string name="cook_mode_factor">Fattore</string>
     <string name="cook_mode_pantry">Dispensa</string>
+    <string name="cook_decrease_servings">Diminuisci le persone</string>
+    <string name="cook_increase_servings">Aumenta le persone</string>
     <string name="cook_from_servings">da %1$d · fattore %2$s</string>
     <string name="cook_factor_only">fattore %1$s</string>
     <string name="cook_pick_ingredient">Tocca l\'ingrediente che vuoi fissare</string>
@@ -20,6 +22,7 @@
     <string name="cook_save_dialog_title">Salva questa scalatura</string>
     <string name="cook_save_dialog_label">Nome</string>
     <string name="cook_save_dialog_confirm">Salva</string>
+    <string name="cook_save_dialog_default">Mostra questa scalatura per impostazione predefinita aprendo la ricetta</string>
     <string name="cook_save_dialog_cancel">Annulla</string>
     <string name="cook_label_servings">Per %1$s persone</string>
     <string name="cook_label_factor">Fattore %1$s</string>
@@ -32,4 +35,16 @@
     <string name="cook_steps">Procedimento</string>
     <string name="cook_ingredients">Ingredienti</string>
     <string name="cook_achievable_card">Per %1$s persone</string>
+    <string name="cook_add_to_shopping">Aggiungi alla lista della spesa</string>
+    <plurals name="cook_added_to_shopping">
+        <item quantity="one">%d articolo aggiunto alla lista della spesa</item>
+        <item quantity="other">%d articoli aggiunti alla lista della spesa</item>
+    </plurals>
+    <string name="cook_nothing_to_add">Niente da aggiungere: questi ingredienti non hanno una quantità da comprare</string>
+    <string name="cooking_mode_start">Inizia a cucinare</string>
+    <string name="cooking_mode_title">In cucina</string>
+    <string name="cooking_mode_progress">%1$d / %2$d</string>
+    <string name="cooking_mode_ingredients">Ingredienti</string>
+    <string name="cooking_mode_close">Chiudi</string>
+    <string name="cooking_mode_no_steps">Questa ricetta non ha un procedimento: controlla gli ingredienti</string>
 </resources>

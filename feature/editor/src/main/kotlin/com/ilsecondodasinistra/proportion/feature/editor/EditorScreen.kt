@@ -263,7 +263,10 @@ private fun ServingsStepper(servings: Int?, onChange: (Int?) -> Unit) {
             onClick = { onChange(((servings ?: 1) - 1).coerceAtLeast(1)) },
             modifier = Modifier.testTag("servings_minus"),
         ) {
-            Icon(Icons.Filled.Remove, contentDescription = null)
+            Icon(
+                Icons.Filled.Remove,
+                contentDescription = stringResource(R.string.editor_decrease_servings),
+            )
         }
         Text(
             text = (servings ?: 1).toString(),
@@ -274,7 +277,10 @@ private fun ServingsStepper(servings: Int?, onChange: (Int?) -> Unit) {
             onClick = { onChange((servings ?: 1) + 1) },
             modifier = Modifier.testTag("servings_plus"),
         ) {
-            Icon(Icons.Filled.Add, contentDescription = null)
+            Icon(
+                Icons.Filled.Add,
+                contentDescription = stringResource(R.string.editor_increase_servings),
+            )
         }
     }
 }

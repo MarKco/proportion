@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shopping_title">Shopping list</string>
+    <string name="shopping_empty_title">Nothing to buy</string>
+    <string name="shopping_empty_body">Ingredients you add while cooking land here.</string>
+    <string name="shopping_share">Share</string>
+    <string name="shopping_more_actions">More actions</string>
+    <string name="shopping_share_chooser">Share shopping list</string>
+    <string name="shopping_clear_checked">Clear checked</string>
+    <string name="shopping_clear_all">Clear all</string>
+    <string name="shopping_clear_all_confirm_title">Clear the whole list?</string>
+    <string name="shopping_clear_all_confirm_body">Every item, checked or not, will be removed.</string>
+    <string name="shopping_clear_all_confirm_yes">Clear list</string>
+    <string name="shopping_clear_all_cancel">Cancel</string>
+    <plurals name="shopping_from_recipes">
+        <item quantity="one">From %d recipe</item>
+        <item quantity="other">From %d recipes</item>
+    </plurals>
+    <string name="shopping_list_title">Shopping list</string>
+    <string name="shopping_list_checked_title">Already got</string>
+    <string name="shopping_attribution">Shared from ProPortion</string>
+</resources>

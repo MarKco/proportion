@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
@@ -36,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -128,16 +131,25 @@ fun SettingsScreen(
 
             Column(modifier = Modifier.selectableGroup()) {
                 ThemeMode.entries.forEach { mode ->
+                    // On-device TalkBack testing showed the bare RadioButton announced with no
+                    // label: the row itself carries the selectable semantics so the adjacent
+                    // text is merged into what gets spoken, and the RadioButton's own click
+                    // handler is dropped so the two don't fight over the tap.
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .selectable(
+                                selected = state.themeMode == mode,
+                                onClick = { onThemeChange(mode) },
+                                role = Role.RadioButton,
+                            )
                             .padding(horizontal = 16.dp, vertical = 4.dp)
                             .testTag("theme_${mode.name}"),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
                             selected = state.themeMode == mode,
-                            onClick = { onThemeChange(mode) },
+                            onClick = null,
                         )
                         Text(
                             text = stringResource(mode.labelRes()),
@@ -147,16 +159,26 @@ fun SettingsScreen(
                 }
             }
 
+            // On-device TalkBack testing showed the bare Switch announced with no label: the
+            // row itself carries the toggleable semantics so "Dynamic colour" is merged into
+            // what gets spoken, and the Switch's own change handler is dropped so the two
+            // don't fight over the tap.
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_dynamic_colour)) },
                 supportingContent = { Text(stringResource(R.string.settings_dynamic_colour_off)) },
                 trailingContent = {
                     Switch(
                         checked = state.useDynamicColour,
-                        onCheckedChange = onDynamicColourChange,
-                        modifier = Modifier.testTag("dynamic_colour_switch"),
+                        onCheckedChange = null,
                     )
                 },
+                modifier = Modifier
+                    .toggleable(
+                        value = state.useDynamicColour,
+                        onValueChange = onDynamicColourChange,
+                        role = Role.Switch,
+                    )
+                    .testTag("dynamic_colour_switch"),
             )
 
             HorizontalDivider()

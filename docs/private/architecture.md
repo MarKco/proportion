@@ -44,6 +44,23 @@ Errors are part of the state, never a crash and never a silent no-op — `CookUi
 The arithmetic is in `:core:domain` and nowhere else. A composable that computed a quantity would
 be a bug: every number on screen comes out of `ScaledRecipe`. See `scaling-engine.md`.
 
+The Home dashboard follows the same rule for a different kind of number: `DashboardSummariser`
+(`:core:domain`) turns the recipe list into counts, course slices and picks once, in one pure
+function, so `HomeViewModel` and its composables never total or filter a list themselves. A
+donut chart is drawn by `DonutChart` in `:core:designsystem`, which knows nothing about recipes —
+it takes plain `DonutSlice` values, so it stays reusable for any other proportional breakdown.
+
+## Cooking mode is a second route, not a second feature
+
+Cooking mode (the screen you actually follow at the stove, screen-always-on, big type, checkable
+steps) lives inside `:feature:cook` as `CookingModeRouteKey`, alongside the existing "Cook this
+recipe" scaling screen. It is not its own module: the two screens are two views onto the same
+`RecipeScaler` output, and a feature module would have had to depend on `:feature:cook` to reuse
+the scaling logic, which the "no feature depends on another feature" rule forbids. The scaling the
+user chose travels between the two screens as URL-safe Base64 of the `ScaleConstraint`'s JSON in
+the navigation route — a raw JSON string as a nav argument is a reliable source of escaping bugs,
+so it goes through `Base64.getUrlEncoder().withoutPadding()` first.
+
 ## Navigation
 
 Navigation Compose with **type-safe routes**: `@Serializable` route classes, `composable<T>`, and

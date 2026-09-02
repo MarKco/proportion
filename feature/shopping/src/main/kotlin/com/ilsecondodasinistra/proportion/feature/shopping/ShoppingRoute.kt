@@ -8,5 +8,5 @@ import kotlinx.serialization.Serializable
 data object ShoppingRoute
 
 fun NavGraphBuilder.shoppingScreen() {
-    composable<ShoppingRoute> { ShoppingScreen() }
+    composable<ShoppingRoute> { ShoppingListRoute() }
 }

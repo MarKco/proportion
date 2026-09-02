@@ -5,6 +5,10 @@ import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.ScaleVariantRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.TagRepository
+import com.ilsecondodasinistra.proportion.core.domain.scale.BakingAdvisor
+import com.ilsecondodasinistra.proportion.core.domain.scale.DefaultRecipeScaler
+import com.ilsecondodasinistra.proportion.core.domain.scale.DiscreteAnalyser
+import com.ilsecondodasinistra.proportion.core.domain.scale.RecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
@@ -193,16 +197,17 @@ class FakeTagRepository(initial: List<Tag> = emptyList()) : TagRepository {
     }
 }
 
+private val variantJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
 class FakeScaleVariantRepository(initial: List<ScaleVariant> = emptyList()) : ScaleVariantRepository {
 
     private val stored = MutableStateFlow(initial)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     override fun observeForRecipe(recipeId: String): Flow<List<ScaleVariant>> =
         stored.map { list -> list.filter { it.recipeId == recipeId } }
 
     override fun readConstraint(variant: ScaleVariant): ScaleConstraint =
-        json.decodeFromString(variant.constraintPayload)
+        variantJson.decodeFromString(variant.constraintPayload)
 
     override suspend fun save(
         recipeId: String,
@@ -216,7 +221,7 @@ class FakeScaleVariantRepository(initial: List<ScaleVariant> = emptyList()) : Sc
             id = id,
             recipeId = recipeId,
             label = label,
-            constraintPayload = json.encodeToString(constraint),
+            constraintPayload = variantJson.encodeToString(constraint),
             isDefault = asDefault,
         )
         return id
@@ -226,6 +231,25 @@ class FakeScaleVariantRepository(initial: List<ScaleVariant> = emptyList()) : Sc
         stored.value = stored.value.filterNot { it.id == id }
     }
 }
+
+/**
+ * Builds a [ScaleVariant] with a real, decodable payload without going through the repository's
+ * `save`, so a test can pin the id and construct a constraint that will not resolve (e.g. a
+ * deleted ingredient line) without the repository rejecting it up front.
+ */
+fun testScaleVariant(
+    id: String,
+    recipeId: String,
+    label: String,
+    constraint: ScaleConstraint,
+    isDefault: Boolean = false,
+): ScaleVariant = ScaleVariant(
+    id = id,
+    recipeId = recipeId,
+    label = label,
+    constraintPayload = variantJson.encodeToString(constraint),
+    isDefault = isDefault,
+)
 
 /** Italian unit names, standing in for the Android resource lookup. */
 class TestUnitNamer : UnitNamer {
@@ -240,6 +264,12 @@ class TestUnitNamer : UnitNamer {
 
 fun testFormatter(): QuantityFormatter =
     QuantityFormatter(DefaultUnitConverter(), TestUnitNamer())
+
+fun testScaler(): RecipeScaler {
+    val converter = DefaultUnitConverter()
+    val formatter = testFormatter()
+    return DefaultRecipeScaler(converter, formatter, DiscreteAnalyser(formatter), BakingAdvisor())
+}
 
 /** Exercises the real codec, so a share payload that would not parse fails the test. */
 class FakeTransferRepository(private val recipes: List<Recipe>) : TransferRepository {

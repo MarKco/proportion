@@ -26,7 +26,10 @@
     <string name="recipe_detail_edit">Edit</string>
     <string name="recipe_detail_delete">Delete</string>
     <string name="recipe_detail_back">Back</string>
+    <string name="recipe_detail_more_actions">More actions</string>
     <string name="recipe_no_servings">Not per person</string>
+    <string name="detail_showing_variant">Showing: %1$s</string>
+    <string name="detail_view_original">View original</string>
 
     <plurals name="recipes_result_count">
         <item quantity="one">%d recipe</item>
@@ -39,6 +42,10 @@
     <plurals name="recipe_ingredient_count">
         <item quantity="one">%d ingredient</item>
         <item quantity="other">%d ingredients</item>
+    </plurals>
+    <plurals name="detail_cook_count">
+        <item quantity="one">Cooked %d time</item>
+        <item quantity="other">Cooked %d times</item>
     </plurals>
     <string name="recipe_share_text">Share as text</string>
     <string name="recipe_share_file">Share as a .proportion file</string>

@@ -4,6 +4,8 @@
     <string name="editor_title_edit">Edit recipe</string>
     <string name="editor_field_title">Recipe name</string>
     <string name="editor_field_servings">Servings</string>
+    <string name="editor_decrease_servings">Decrease servings</string>
+    <string name="editor_increase_servings">Increase servings</string>
     <string name="editor_field_notes">Notes</string>
     <string name="editor_section_ingredients">Ingredients</string>
     <string name="editor_section_steps">Method</string>

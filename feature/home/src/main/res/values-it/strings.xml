@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_title">Home</string>
+    <string name="home_empty_title">Nessuna ricetta da mostrare</string>
+    <string name="home_empty_body">Aggiungi la tua prima ricetta: comparirà qui, pronta da riproporzionare.</string>
+    <string name="home_empty_action">Aggiungi una ricetta</string>
+
+    <string name="home_numbers_title">La tua libreria</string>
+    <string name="home_uncategorised">%d senza portata</string>
+
+    <string name="home_continue_title">Continua a cucinare</string>
+    <string name="home_continue_showing">Salvata come %1$s</string>
+
+    <string name="home_most_cooked_title">Più cucinate</string>
+    <string name="home_favourites_title">Preferite</string>
+
+    <string name="home_suggestion_title">Cosa cucino?</string>
+    <string name="home_suggestion_reshuffle">Un\'altra idea</string>
+    <string name="home_suggestion_none">Nessuna ricetta ha ancora questo tag</string>
+    <string name="home_suggestion_all_tags">Tutte le portate</string>
+    <string name="home_cook_action">Cucina</string>
+
+    <plurals name="home_recipes_count">
+        <item quantity="one">%d ricetta</item>
+        <item quantity="other">%d ricette</item>
+    </plurals>
+    <plurals name="home_cooks_count">
+        <item quantity="one">%d cottura registrata</item>
+        <item quantity="other">%d cotture registrate</item>
+    </plurals>
+    <plurals name="home_favourites_count">
+        <item quantity="one">%d preferito</item>
+        <item quantity="other">%d preferiti</item>
+    </plurals>
+</resources>
