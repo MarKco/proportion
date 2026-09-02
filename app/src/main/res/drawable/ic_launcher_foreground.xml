@@ -11,21 +11,29 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- side wall, left half (darker rose) -->
+    <!-- side wall, left sliver, under the butter wedge's own edge (darker butter) -->
+    <path
+        android:fillColor="#CEB066"
+        android:strokeColor="#1D2621"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M24,58 A30,17 0 0,0 32,69.56 L32,78.56 A30,17 0 0,1 24,67 Z" />
+
+    <!-- side wall, front (darker rose) - one panel spanning the centre symmetrically, matching the front wedge above it -->
     <path
         android:fillColor="#C98CA1"
         android:strokeColor="#1D2621"
         android:strokeWidth="2.4"
         android:strokeLineJoin="round"
-        android:pathData="M24,58 A30,17 0 0,0 54,75 L54,84 A30,17 0 0,1 24,67 Z" />
+        android:pathData="M32,69.56 A30,17 0 0,0 76,69.56 L76,78.56 A30,17 0 0,1 32,78.56 Z" />
 
-    <!-- side wall, right half (darker apricot) -->
+    <!-- side wall, right sliver, under the apricot wedge's own edge (darker apricot) -->
     <path
         android:fillColor="#D28F6C"
         android:strokeColor="#1D2621"
         android:strokeWidth="2.4"
         android:strokeLineJoin="round"
-        android:pathData="M54,75 A30,17 0 0,0 84,58 L84,67 A30,17 0 0,1 54,84 Z" />
+        android:pathData="M76,69.56 A30,17 0 0,0 84,58 L84,67 A30,17 0 0,1 76,78.56 Z" />
 
     <!-- top face, right wedge (apricot) -->
     <path
@@ -33,7 +41,7 @@
         android:strokeColor="#1D2621"
         android:strokeWidth="2.4"
         android:strokeLineJoin="round"
-        android:pathData="M54,58 L54,41 A30,17 0 0,1 80,66.5 Z" />
+        android:pathData="M54,58 L54,41 A30,17 0 0,1 76,69.56 Z" />
 
     <!-- top face, front wedge (rose) -->
     <path
@@ -41,7 +49,7 @@
         android:strokeColor="#1D2621"
         android:strokeWidth="2.4"
         android:strokeLineJoin="round"
-        android:pathData="M54,58 L80,66.5 A30,17 0 0,1 28,66.5 Z" />
+        android:pathData="M54,58 L76,69.56 A30,17 0 0,1 32,69.56 Z" />
 
     <!-- top face, left wedge (butter) -->
     <path
@@ -49,7 +57,7 @@
         android:strokeColor="#1D2621"
         android:strokeWidth="2.4"
         android:strokeLineJoin="round"
-        android:pathData="M54,58 L28,66.5 A30,17 0 0,1 54,41 Z" />
+        android:pathData="M54,58 L32,69.56 A30,17 0 0,1 54,41 Z" />
 
     <!-- candle left -->
     <path
@@ -57,12 +65,12 @@
         android:strokeColor="#1D2621"
         android:strokeWidth="2.2"
         android:strokeLineJoin="round"
-        android:pathData="M39,55 L39,41 L45,41 L45,55 Z" />
+        android:pathData="M36,58 L36,41 L42,41 L42,58 Z" />
     <path
         android:fillColor="#F49B5F"
         android:strokeColor="#1D2621"
         android:strokeWidth="1.8"
-        android:pathData="M42,40 C45,36 44.5,32 42,29 C39.5,32 39,36 42,40 Z" />
+        android:pathData="M39,40 C42,36 41.5,32 39,29 C36.5,32 36,36 39,40 Z" />
 
     <!-- candle centre -->
     <path
@@ -70,7 +78,7 @@
         android:strokeColor="#1D2621"
         android:strokeWidth="2.2"
         android:strokeLineJoin="round"
-        android:pathData="M51,50 L51,34 L57,34 L57,50 Z" />
+        android:pathData="M51,53 L51,34 L57,34 L57,53 Z" />
     <path
         android:fillColor="#F49B5F"
         android:strokeColor="#1D2621"
@@ -83,10 +91,10 @@
         android:strokeColor="#1D2621"
         android:strokeWidth="2.2"
         android:strokeLineJoin="round"
-        android:pathData="M63,55 L63,41 L69,41 L69,55 Z" />
+        android:pathData="M66,58 L66,41 L72,41 L72,58 Z" />
     <path
         android:fillColor="#F49B5F"
         android:strokeColor="#1D2621"
         android:strokeWidth="1.8"
-        android:pathData="M66,40 C69,36 68.5,32 66,29 C63.5,32 63,36 66,40 Z" />
+        android:pathData="M69,40 C72,36 71.5,32 69,29 C66.5,32 66,36 69,40 Z" />
 </vector>
