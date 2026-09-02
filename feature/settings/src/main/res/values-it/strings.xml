@@ -7,7 +7,12 @@
     <string name="settings_theme_light">Chiaro</string>
     <string name="settings_theme_dark">Scuro</string>
     <string name="settings_dynamic_colour">Colori dallo sfondo</string>
-    <string name="settings_dynamic_colour_off">Da spento usa la palette pastello di ProPortion</string>
+    <string name="settings_dynamic_colour_off">Da spento, scegli un tema dell\'app qui sotto</string>
+    <string name="settings_app_theme">Tema dell\'app</string>
+    <string name="settings_app_theme_pastel">Pastello</string>
+    <string name="settings_app_theme_vivid">Vivace</string>
+    <string name="settings_app_theme_playful">Allegra</string>
+    <string name="settings_app_theme_high_contrast">Alto contrasto</string>
     <string name="settings_language">Lingua</string>
     <string name="settings_language_system">Come il sistema</string>
     <string name="settings_language_italian">Italiano</string>

@@ -1,5 +1,13 @@
 # Changelog
 
+## Non rilasciato
+
+- Selezione della lingua dell'app in Impostazioni: italiano o inglese, indipendentemente dalla
+  lingua del dispositivo, oppure lasciata seguire il sistema.
+- Scelta del tema dell'app in Impostazioni: a colori dallo sfondo disattivati, si può scegliere tra
+  quattro temi (Pastello, Vivace, Allegra, Alto contrasto), ognuno con una variante chiara e una
+  scura.
+
 ## 1.0 — 2026-09-02
 
 Prima versione.

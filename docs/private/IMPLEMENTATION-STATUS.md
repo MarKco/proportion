@@ -13,11 +13,17 @@ is ready (no keystore created yet — that's Marco's own step whenever he has on
 a debug APK) and `./gradlew assembleRelease` succeeds unsigned. Verified end to end on a Fairphone 3
 (Android 13) on 2026-09-02.
 
-**What is next:** phase 8 is being scoped (a comprehensive, translated, autocompleted ingredient
-catalogue — brainstorming in progress as of 2026-09-03; the existing autocomplete already matches
-on a typed substring, `catalogue.filter { it.normalisedName.contains(needle) }`, so the missing
-piece is data, and how a built-in ingredient's name should follow the app language the way built-in
-tags already do is the open design question).
+**What is next:** phase 8 design is written and awaiting Marco's review at
+`docs/private/specs/2026-09-03-ingredient-catalogue-design.md` — a comprehensive, translated,
+autocompleted ingredient catalogue (~400-600 entries). The existing autocomplete already matches on
+a typed substring (`catalogue.filter { it.normalisedName.contains(needle) }`); this phase adds the
+missing data and the translation mechanism (built-in ingredients resolve through `strings.xml` at
+the repository boundary, the same way built-in tags follow the app language, via a new
+`BuiltInIngredientNamer`). The spec also flags a real gap found while grounding it: `.proportion`
+export/import has no built-in-ingredient equivalent of the tags' `builtin:` key prefix, so sharing
+a recipe between two devices set to different app languages would currently duplicate a built-in
+ingredient under a literal name — a fix is proposed in the spec's §5, pending Marco's decision on
+whether it's in scope for this phase. Next step once the spec is approved: writing-plans skill.
 
 **Added after phase 7, 2026-09-03: per-app language selection.** Settings now has a language picker
 (System / Italiano / English), independent of the device's own language. The old
@@ -36,6 +42,26 @@ for API 26–32, where no such platform API exists — a language change there t
 `recreate()` the same way, just via a different, older mechanism. `docs/public/en/`'s screenshots
 are still Italian-locale copies, disclosed in the doc itself, pending a design review Marco wants to
 do before recapturing screenshots for both `docs/public` and `docs/manual`.
+
+**Added after phase 7, 2026-09-03: app theme picker.** Settings now has a second appearance choice,
+enabled only while "Colours from the wallpaper" (dynamic colour / Material You) is off: four named
+static themes — Pastel, Vivid, Playful, High contrast — each with its own light and dark variant.
+`UserPreferences.appTheme: AppTheme` (`:core:model`) persists through `UserPreferencesDataSource`
+(key `app_theme`, string-encoded enum, falls back to `PASTEL` on a missing/corrupt value, same
+pattern as `themeMode`), threaded through `PreferencesRepository`/`PreferencesRepositoryImpl`, and
+consumed by `ProPortionTheme(appTheme = ...)` in `:core:designsystem/theme/Theme.kt`, which now picks
+one of eight `ColorScheme`s (four themes × light/dark) instead of the old single static
+`ProPortionLightColors`/`ProPortionDarkColors` pair — that pair (and the now-unused `GreenInk`
+constant) is gone; `Pistachio`/`Apricot`/`Butter`/`Blueberry`/`Rose` remain, now used only for chart
+colours. All eight schemes are checked in `ColorContrastTest.kt` against WCAG AA (4.5:1) on every
+text-on-fill role pair; the high-contrast theme is additionally checked against the stricter AAA bar
+(7:1) on its surface and primary roles, since accessibility is that theme's whole purpose. The
+Settings row (`SettingsScreen.kt`) follows the existing radio-group pattern used for theme mode and
+language, stays visible but disabled (`alpha = 0.38f`, matching Material's standard disabled-content
+opacity) while dynamic colour is on, rather than disappearing — chosen so the setting's existence
+isn't hidden from someone who might want to turn dynamic colour off. New strings
+(`settings_app_theme*`) added to both `values/` and `values-it/strings.xml` in `:feature:settings`;
+parity confirmed with `scripts/check-string-parity.sh`.
 
 Phase 6's and phase 7's per-task briefs, reports and full progress ledgers (including every ruling
 made while executing them) are kept at `.superpowers/sdd/2026-09-01-phase-6-home-shopping-cooking-mode/`
@@ -78,8 +104,8 @@ Living checklist, updated as work progresses. If a session ends, this file says 
 
 **Legend:** `[ ]` not started · `[~]` in progress · `[x]` done
 
-Last updated: 2026-09-02 (phases 1–7 complete, `verifyAll` green including `lint`, verified on a
-Fairphone 3 / Android 13)
+Last updated: 2026-09-03 (phases 1–7 complete; app theme picker added after phase 7; `verifyAll`
+green including `lint`, verified on a Fairphone 3 / Android 13)
 
 ## Phase 0 — Design
 - [x] Brainstorming and decisions

@@ -36,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -43,6 +44,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.ImportMode
 import com.ilsecondodasinistra.proportion.core.transfer.ProportionFile
@@ -88,6 +90,7 @@ fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel()) {
         snackbarHostState = snackbarHostState,
         onThemeChange = viewModel::onThemeChange,
         onDynamicColourChange = viewModel::onDynamicColourChange,
+        onAppThemeChange = viewModel::onAppThemeChange,
         onLanguageChange = { language ->
             viewModel.onLanguageChange(language)
             // The running screens are already inflated in the old language; AppCompat's own
@@ -117,6 +120,7 @@ fun SettingsScreen(
     snackbarHostState: SnackbarHostState,
     onThemeChange: (ThemeMode) -> Unit,
     onDynamicColourChange: (Boolean) -> Unit,
+    onAppThemeChange: (AppTheme) -> Unit,
     onLanguageChange: (AppLanguage) -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
@@ -189,6 +193,46 @@ fun SettingsScreen(
                     )
                     .testTag("dynamic_colour_switch"),
             )
+
+            Text(
+                text = stringResource(R.string.settings_app_theme),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (state.useDynamicColour) {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+            )
+
+            Column(modifier = Modifier.selectableGroup()) {
+                AppTheme.entries.forEach { theme ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = state.appTheme == theme,
+                                enabled = !state.useDynamicColour,
+                                onClick = { onAppThemeChange(theme) },
+                                role = Role.RadioButton,
+                            )
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .alpha(if (state.useDynamicColour) 0.38f else 1f)
+                            .testTag("app_theme_${theme.name}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = state.appTheme == theme,
+                            enabled = !state.useDynamicColour,
+                            onClick = null,
+                        )
+                        Text(
+                            text = stringResource(theme.labelRes()),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
 
             HorizontalDivider()
             SectionTitle(stringResource(R.string.settings_language))
@@ -282,6 +326,13 @@ private fun ThemeMode.labelRes(): Int = when (this) {
     ThemeMode.SYSTEM -> R.string.settings_theme_system
     ThemeMode.LIGHT -> R.string.settings_theme_light
     ThemeMode.DARK -> R.string.settings_theme_dark
+}
+
+private fun AppTheme.labelRes(): Int = when (this) {
+    AppTheme.PASTEL -> R.string.settings_app_theme_pastel
+    AppTheme.VIVID -> R.string.settings_app_theme_vivid
+    AppTheme.PLAYFUL -> R.string.settings_app_theme_playful
+    AppTheme.HIGH_CONTRAST -> R.string.settings_app_theme_high_contrast
 }
 
 private fun AppLanguage.labelRes(): Int = when (this) {

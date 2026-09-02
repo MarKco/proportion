@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.proportion.feature.settings
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionTheme
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +33,7 @@ class SettingsScreenTest {
 
     private var themeChanged: ThemeMode? = null
     private var dynamicColourChanged: Boolean? = null
+    private var appThemeChanged: AppTheme? = null
     private var languageChanged: AppLanguage? = null
 
     private fun render(state: SettingsUiState) {
@@ -41,6 +44,7 @@ class SettingsScreenTest {
                     snackbarHostState = remember { SnackbarHostState() },
                     onThemeChange = { themeChanged = it },
                     onDynamicColourChange = { dynamicColourChanged = it },
+                    onAppThemeChange = { appThemeChanged = it },
                     onLanguageChange = { languageChanged = it },
                     onBackupClick = {},
                     onRestoreClick = {},
@@ -79,6 +83,30 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithTag("dynamic_colour_switch").performClick()
 
         assertThat(dynamicColourChanged).isFalse()
+    }
+
+    @Test
+    fun `the selected app theme row reports itself as selected`() {
+        render(SettingsUiState(useDynamicColour = false, appTheme = AppTheme.VIVID))
+
+        composeTestRule.onNodeWithTag("app_theme_VIVID").assertIsSelected()
+        composeTestRule.onNodeWithTag("app_theme_PASTEL").assertIsNotSelected()
+    }
+
+    @Test
+    fun `tapping an app theme row reports the tapped theme`() {
+        render(SettingsUiState(useDynamicColour = false, appTheme = AppTheme.PASTEL))
+
+        composeTestRule.onNodeWithTag("app_theme_PLAYFUL").performScrollTo().performClick()
+
+        assertThat(appThemeChanged).isEqualTo(AppTheme.PLAYFUL)
+    }
+
+    @Test
+    fun `app theme rows are disabled while dynamic colour is on`() {
+        render(SettingsUiState(useDynamicColour = true))
+
+        composeTestRule.onNodeWithTag("app_theme_PASTEL").assertIsNotEnabled()
     }
 
     @Test

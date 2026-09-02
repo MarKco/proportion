@@ -5,6 +5,7 @@ import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.data.PendingImport
 import com.ilsecondodasinistra.proportion.core.domain.LocaleController
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.model.UserPreferences
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
@@ -43,6 +44,9 @@ private class FakePreferencesRepository : PreferencesRepository {
     }
     override suspend fun setDynamicColour(enabled: Boolean) {
         preferences.value = preferences.value.copy(useDynamicColour = enabled)
+    }
+    override suspend fun setAppTheme(theme: AppTheme) {
+        preferences.value = preferences.value.copy(appTheme = theme)
     }
 }
 
@@ -92,7 +96,11 @@ class SettingsViewModelTest {
 
     @Test
     fun `the current preferences are shown`() = runTest {
-        preferences.preferences.value = UserPreferences(ThemeMode.DARK, useDynamicColour = false)
+        preferences.preferences.value = UserPreferences(
+            ThemeMode.DARK,
+            useDynamicColour = false,
+            appTheme = AppTheme.HIGH_CONTRAST,
+        )
 
         viewModel().uiState.test {
             advanceUntilIdle()
@@ -100,6 +108,7 @@ class SettingsViewModelTest {
 
             assertThat(state.themeMode).isEqualTo(ThemeMode.DARK)
             assertThat(state.useDynamicColour).isFalse()
+            assertThat(state.appTheme).isEqualTo(AppTheme.HIGH_CONTRAST)
         }
     }
 
@@ -126,6 +135,19 @@ class SettingsViewModelTest {
 
             assertThat(expectMostRecentItem().useDynamicColour).isFalse()
         }
+    }
+
+    @Test
+    fun `changing the app theme writes through`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onAppThemeChange(AppTheme.PLAYFUL)
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().appTheme).isEqualTo(AppTheme.PLAYFUL)
+        }
+        assertThat(preferences.preferences.value.appTheme).isEqualTo(AppTheme.PLAYFUL)
     }
 
     @Test

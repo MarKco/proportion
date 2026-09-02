@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.proportion.core.data.PendingImport
 import com.ilsecondodasinistra.proportion.core.domain.LocaleController
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
 import com.ilsecondodasinistra.proportion.core.transfer.ImportMode
@@ -57,6 +58,7 @@ class SettingsViewModel @Inject constructor(
                     it.copy(
                         themeMode = preferences.themeMode,
                         useDynamicColour = preferences.useDynamicColour,
+                        appTheme = preferences.appTheme,
                     )
                 }
             }
@@ -69,6 +71,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onDynamicColourChange(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setDynamicColour(enabled) }
+    }
+
+    fun onAppThemeChange(theme: AppTheme) {
+        viewModelScope.launch { preferencesRepository.setAppTheme(theme) }
     }
 
     /**

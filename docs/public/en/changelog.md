@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Per-app language selection in Settings: Italian or English, independent of the device's own
+  language, or left to follow the system.
+- App theme picker in Settings: when colours from the wallpaper are off, choose between four
+  built-in themes (Pastel, Vivid, Playful, High contrast), each with a light and a dark variant.
+
 ## 1.0 — 2026-09-02
 
 First release.

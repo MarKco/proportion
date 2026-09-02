@@ -59,8 +59,11 @@ not bake for 1.5x the time.
   ![Cooking mode](screenshots/cook-mode.png)
 
 - **Favourites** with a counter of how many times a recipe has been cooked.
-- **Italian and English**, following the system language (an independent per-app selection is
-  ready at the data layer but not yet reachable from any screen).
+- **Italian and English**, chosen independently of the device's own language from Settings, or left
+  to follow the system.
+- **Appearance.** Colours can follow your wallpaper (Material You, Android 12+), or — with that
+  off — pick one of four built-in themes: Pastel, Vivid, Playful, or a high-contrast theme built to
+  a stricter accessibility standard. Each adapts to light and dark mode.
 
 ## What it does not do (yet)
 

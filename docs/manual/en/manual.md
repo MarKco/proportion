@@ -333,8 +333,9 @@ entire library (every recipe, tags, the ingredient catalogue and saved scalings)
    could not be read."
 
 > **[screenshot: the full Settings screen, from the "Appearance" section (theme, colours from the
-> wallpaper) down to the "Your recipes" section with the "Back up all recipes" and "Restore from
-> a backup" items visible, and the "About" section at the bottom with author and version]**
+> wallpaper, and — with that off — the app theme picker: Pastel, Vivid, Playful, High contrast)
+> down to the "Your recipes" section with the "Back up all recipes" and "Restore from a backup"
+> items visible, and the "About" section at the bottom with author and version]**
 
 > **[screenshot: the "Restore" dialog open over Settings after picking a backup file, with a
 > count like "42 recipes in this file, 12 already here." and the two buttons "Merge" and

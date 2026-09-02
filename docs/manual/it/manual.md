@@ -340,9 +340,10 @@ dell'intera libreria (tutte le ricette, i tag, il catalogo ingredienti e le vari
    "Questo non è un file ProPortion.", "Questo file è stato scritto da una versione più recente
    dell'app (N)." o "Non riesco a leggere questo file."
 
-> **[screenshot: la schermata Impostazioni per intero, dalla sezione "Aspetto" (tema, colori
-> dallo sfondo) fino alla sezione "Le tue ricette" con le voci "Salva tutte le ricette" e
-> "Ripristina da un backup" visibili, e la sezione "Informazioni" in fondo con autore e versione]**
+> **[screenshot: la schermata Impostazioni per intero, dalla sezione "Aspetto" (tema, colori dallo
+> sfondo e — a quella disattivata — la scelta del tema dell'app: Pastello, Vivace, Allegra, Alto
+> contrasto) fino alla sezione "Le tue ricette" con le voci "Salva tutte le ricette" e "Ripristina
+> da un backup" visibili, e la sezione "Informazioni" in fondo con autore e versione]**
 
 > **[screenshot: il dialogo "Ripristino" aperto sopra Impostazioni dopo aver scelto un file di
 > backup, con un conteggio tipo "42 ricette nel file, 12 già presenti." e i due pulsanti "Unisci"

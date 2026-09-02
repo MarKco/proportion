@@ -7,7 +7,12 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_dynamic_colour">Colours from the wallpaper</string>
-    <string name="settings_dynamic_colour_off">When off, the ProPortion pastel palette is used</string>
+    <string name="settings_dynamic_colour_off">When off, pick an app theme below</string>
+    <string name="settings_app_theme">App theme</string>
+    <string name="settings_app_theme_pastel">Pastel</string>
+    <string name="settings_app_theme_vivid">Vivid</string>
+    <string name="settings_app_theme_playful">Playful</string>
+    <string name="settings_app_theme_high_contrast">High contrast</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system">Follow the system</string>
     <string name="settings_language_italian">Italiano</string>

@@ -58,8 +58,12 @@ uova non si possono dimezzare, che "un pizzico di sale" non si scala, e che una 
   ![Modalità cottura](screenshots/cook-mode.png)
 
 - **Preferiti** con contatore delle volte in cui una ricetta è stata cucinata.
-- **Italiano e inglese**, seguendo la lingua del sistema (una selezione indipendente dal sistema
-  è predisposta a livello di dati ma non ancora raggiungibile da nessuna schermata).
+- **Italiano e inglese**, scelti in Impostazioni indipendentemente dalla lingua del dispositivo,
+  oppure lasciati seguire il sistema.
+- **Aspetto.** I colori possono seguire lo sfondo del telefono (Material You, Android 12+), oppure
+  — a quella disattivata — si può scegliere uno tra quattro temi: Pastello, Vivace, Allegra, o un
+  tema ad alto contrasto pensato per un livello di accessibilità più rigoroso. Ognuno si adatta a
+  tema chiaro e scuro.
 
 ## Cosa non fa (ancora)
 

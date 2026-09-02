@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
             ProPortionTheme(
                 darkTheme = darkTheme,
                 dynamicColour = preferences.useDynamicColour,
+                appTheme = preferences.appTheme,
             ) {
                 ProPortionApp(startDestination = if (openedUri != null) SettingsRouteKey else HomeRoute)
             }

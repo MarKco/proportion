@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -31,6 +32,7 @@ class UserPreferencesDataSourceTest {
 
         assertThat(prefs.themeMode).isEqualTo(ThemeMode.SYSTEM)
         assertThat(prefs.useDynamicColour).isTrue()
+        assertThat(prefs.appTheme).isEqualTo(AppTheme.PASTEL)
     }
 
     @Test
@@ -45,5 +47,12 @@ class UserPreferencesDataSourceTest {
         dataSource.setDynamicColour(false)
 
         assertThat(dataSource.preferences.first().useDynamicColour).isFalse()
+    }
+
+    @Test
+    fun `the chosen app theme survives a read back`() = runTest {
+        dataSource.setAppTheme(AppTheme.HIGH_CONTRAST)
+
+        assertThat(dataSource.preferences.first().appTheme).isEqualTo(AppTheme.HIGH_CONTRAST)
     }
 }

@@ -1,17 +1,25 @@
 package com.ilsecondodasinistra.proportion.core.designsystem
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import com.google.common.truth.Truth.assertThat
-import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionDarkColors
-import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionLightColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.HighContrastDarkColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.HighContrastLightColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.PastelDarkColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.PastelLightColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.PlayfulDarkColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.PlayfulLightColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.VividDarkColors
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.VividLightColors
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import org.junit.Test
 
 /**
- * The pastel palette is the fallback whenever Material You is unavailable or switched off, so it
- * has to stand on its own: WCAG AA for body text, in both schemes.
+ * Every static scheme is a fallback whenever Material You is unavailable or switched off, so each
+ * has to stand on its own: WCAG AA for body text and brand containers. The high-contrast theme is
+ * held to the stricter AAA bar, since accessibility is its entire reason to exist.
  */
 class ColorContrastTest {
 
@@ -29,49 +37,49 @@ class ColorContrastTest {
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 
-    @Test
-    fun `body text meets AA on the light surface`() {
-        assertThat(contrastRatio(ProPortionLightColors.onSurface, ProPortionLightColors.surface))
-            .isAtLeast(4.5)
-        assertThat(contrastRatio(ProPortionLightColors.onSurfaceVariant, ProPortionLightColors.surface))
-            .isAtLeast(4.5)
+    private fun ColorScheme.assertMeetsAa() {
+        assertThat(contrastRatio(onSurface, surface)).isAtLeast(4.5)
+        assertThat(contrastRatio(onSurfaceVariant, surface)).isAtLeast(4.5)
+        assertThat(contrastRatio(onPrimary, primary)).isAtLeast(4.5)
+        assertThat(contrastRatio(onPrimaryContainer, primaryContainer)).isAtLeast(4.5)
+        assertThat(contrastRatio(onSecondary, secondary)).isAtLeast(4.5)
+        assertThat(contrastRatio(onSecondaryContainer, secondaryContainer)).isAtLeast(4.5)
+        assertThat(contrastRatio(onTertiary, tertiary)).isAtLeast(4.5)
+        assertThat(contrastRatio(onTertiaryContainer, tertiaryContainer)).isAtLeast(4.5)
+    }
+
+    private fun ColorScheme.assertMeetsAaa() {
+        assertThat(contrastRatio(onSurface, surface)).isAtLeast(7.0)
+        assertThat(contrastRatio(onPrimary, primary)).isAtLeast(7.0)
     }
 
     @Test
-    fun `body text meets AA on the dark surface`() {
-        assertThat(contrastRatio(ProPortionDarkColors.onSurface, ProPortionDarkColors.surface))
-            .isAtLeast(4.5)
-        assertThat(contrastRatio(ProPortionDarkColors.onSurfaceVariant, ProPortionDarkColors.surface))
-            .isAtLeast(4.5)
+    fun `pastel theme meets AA in both schemes`() {
+        PastelLightColors.assertMeetsAa()
+        PastelDarkColors.assertMeetsAa()
     }
 
     @Test
-    fun `text on the brand containers stays readable`() {
-        assertThat(
-            contrastRatio(
-                ProPortionLightColors.onPrimaryContainer,
-                ProPortionLightColors.primaryContainer,
-            ),
-        ).isAtLeast(4.5)
-        assertThat(
-            contrastRatio(
-                ProPortionLightColors.onSecondaryContainer,
-                ProPortionLightColors.secondaryContainer,
-            ),
-        ).isAtLeast(4.5)
-        assertThat(
-            contrastRatio(
-                ProPortionLightColors.onTertiaryContainer,
-                ProPortionLightColors.tertiaryContainer,
-            ),
-        ).isAtLeast(4.5)
+    fun `vivid theme meets AA in both schemes`() {
+        VividLightColors.assertMeetsAa()
+        VividDarkColors.assertMeetsAa()
     }
 
     @Test
-    fun `primary buttons are readable in both schemes`() {
-        assertThat(contrastRatio(ProPortionLightColors.onPrimary, ProPortionLightColors.primary))
-            .isAtLeast(4.5)
-        assertThat(contrastRatio(ProPortionDarkColors.onPrimary, ProPortionDarkColors.primary))
-            .isAtLeast(4.5)
+    fun `playful theme meets AA in both schemes`() {
+        PlayfulLightColors.assertMeetsAa()
+        PlayfulDarkColors.assertMeetsAa()
+    }
+
+    @Test
+    fun `high contrast theme meets AA in both schemes`() {
+        HighContrastLightColors.assertMeetsAa()
+        HighContrastDarkColors.assertMeetsAa()
+    }
+
+    @Test
+    fun `high contrast theme also clears the stricter AAA bar`() {
+        HighContrastLightColors.assertMeetsAaa()
+        HighContrastDarkColors.assertMeetsAaa()
     }
 }

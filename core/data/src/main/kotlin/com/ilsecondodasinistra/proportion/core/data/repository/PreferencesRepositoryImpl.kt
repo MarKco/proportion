@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.proportion.core.data.repository
 
 import com.ilsecondodasinistra.proportion.core.datastore.UserPreferencesDataSource
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.model.UserPreferences
 import javax.inject.Inject
@@ -16,4 +17,6 @@ class PreferencesRepositoryImpl @Inject constructor(
     override suspend fun setThemeMode(mode: ThemeMode) = dataSource.setThemeMode(mode)
 
     override suspend fun setDynamicColour(enabled: Boolean) = dataSource.setDynamicColour(enabled)
+
+    override suspend fun setAppTheme(theme: AppTheme) = dataSource.setAppTheme(theme)
 }

@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.proportion.feature.settings
 
+import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
 
@@ -30,6 +31,7 @@ sealed interface RestoreStep {
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val useDynamicColour: Boolean = true,
+    val appTheme: AppTheme = AppTheme.PASTEL,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val restore: RestoreStep = RestoreStep.Idle,
     val backupSaved: Boolean = false,
