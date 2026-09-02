@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
@@ -30,6 +31,7 @@ class SettingsScreenTest {
 
     private var themeChanged: ThemeMode? = null
     private var dynamicColourChanged: Boolean? = null
+    private var languageChanged: AppLanguage? = null
 
     private fun render(state: SettingsUiState) {
         composeTestRule.setContent {
@@ -39,6 +41,7 @@ class SettingsScreenTest {
                     snackbarHostState = remember { SnackbarHostState() },
                     onThemeChange = { themeChanged = it },
                     onDynamicColourChange = { dynamicColourChanged = it },
+                    onLanguageChange = { languageChanged = it },
                     onBackupClick = {},
                     onRestoreClick = {},
                     onMerge = {},
@@ -76,5 +79,22 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithTag("dynamic_colour_switch").performClick()
 
         assertThat(dynamicColourChanged).isFalse()
+    }
+
+    @Test
+    fun `the selected language row reports itself as selected`() {
+        render(SettingsUiState(language = AppLanguage.ITALIAN))
+
+        composeTestRule.onNodeWithTag("language_ITALIAN").assertIsSelected()
+        composeTestRule.onNodeWithTag("language_ENGLISH").assertIsNotSelected()
+    }
+
+    @Test
+    fun `tapping a language row reports the tapped language`() {
+        render(SettingsUiState(language = AppLanguage.SYSTEM))
+
+        composeTestRule.onNodeWithTag("language_ENGLISH").performScrollTo().performClick()
+
+        assertThat(languageChanged).isEqualTo(AppLanguage.ENGLISH)
     }
 }

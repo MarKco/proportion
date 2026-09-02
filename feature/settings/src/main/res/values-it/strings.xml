@@ -8,6 +8,10 @@
     <string name="settings_theme_dark">Scuro</string>
     <string name="settings_dynamic_colour">Colori dallo sfondo</string>
     <string name="settings_dynamic_colour_off">Da spento usa la palette pastello di ProPortion</string>
+    <string name="settings_language">Lingua</string>
+    <string name="settings_language_system">Come il sistema</string>
+    <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_english">English</string>
     <string name="settings_data">Le tue ricette</string>
     <string name="settings_backup">Salva tutte le ricette</string>
     <string name="settings_backup_hint">Scrive un file .proportion dove preferisci.</string>

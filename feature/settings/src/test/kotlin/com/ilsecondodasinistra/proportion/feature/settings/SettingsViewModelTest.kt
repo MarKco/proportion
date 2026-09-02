@@ -3,6 +3,7 @@ package com.ilsecondodasinistra.proportion.feature.settings
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.data.PendingImport
+import com.ilsecondodasinistra.proportion.core.domain.LocaleController
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.model.UserPreferences
@@ -43,8 +44,12 @@ private class FakePreferencesRepository : PreferencesRepository {
     override suspend fun setDynamicColour(enabled: Boolean) {
         preferences.value = preferences.value.copy(useDynamicColour = enabled)
     }
-    override suspend fun setLanguage(tag: String?) {
-        preferences.value = preferences.value.copy(language = tag)
+}
+
+private class FakeLocaleController(private var tag: String? = null) : LocaleController {
+    override fun currentTag(): String? = tag
+    override fun setTag(tag: String?) {
+        this.tag = tag
     }
 }
 
@@ -79,10 +84,11 @@ class SettingsViewModelTest {
 
     private val preferences = FakePreferencesRepository()
     private val transfer = FakeTransferRepository()
+    private val localeController = FakeLocaleController()
 
     private val pendingImport = PendingImport()
 
-    private fun viewModel() = SettingsViewModel(preferences, transfer, pendingImport)
+    private fun viewModel() = SettingsViewModel(preferences, transfer, pendingImport, localeController)
 
     @Test
     fun `the current preferences are shown`() = runTest {
@@ -120,6 +126,51 @@ class SettingsViewModelTest {
 
             assertThat(expectMostRecentItem().useDynamicColour).isFalse()
         }
+    }
+
+    @Test
+    fun `the current app language is read from the locale controller on start`() = runTest {
+        localeController.setTag("it")
+
+        viewModel().uiState.test {
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().language).isEqualTo(AppLanguage.ITALIAN)
+        }
+    }
+
+    @Test
+    fun `no override reads as following the system`() = runTest {
+        viewModel().uiState.test {
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().language).isEqualTo(AppLanguage.SYSTEM)
+        }
+    }
+
+    @Test
+    fun `changing the language writes through to the locale controller`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onLanguageChange(AppLanguage.ENGLISH)
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().language).isEqualTo(AppLanguage.ENGLISH)
+        }
+        assertThat(localeController.currentTag()).isEqualTo("en")
+    }
+
+    @Test
+    fun `choosing system clears the override`() = runTest {
+        localeController.setTag("it")
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onLanguageChange(AppLanguage.SYSTEM)
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().language).isEqualTo(AppLanguage.SYSTEM)
+        }
+        assertThat(localeController.currentTag()).isNull()
     }
 
     @Test

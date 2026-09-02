@@ -13,13 +13,29 @@ is ready (no keystore created yet — that's Marco's own step whenever he has on
 a debug APK) and `./gradlew assembleRelease` succeeds unsigned. Verified end to end on a Fairphone 3
 (Android 13) on 2026-09-02.
 
-**What is next:** nothing is currently planned past phase 7. Two known, deliberately-deferred
-follow-ups if v1.1 work starts: (1) a UI for setting a variant as default already exists and works
-(phase 6), but per-app language selection independent of the system does not — the data-layer
-plumbing is there (`PreferencesRepository.setLanguage`) but nothing calls
-`AppCompatDelegate.setApplicationLocales` or offers a picker; (2) `docs/public/en/`'s screenshots
-are still Italian-locale copies, disclosed in the doc itself, pending a design review Marco wants
-to do before recapturing screenshots for both `docs/public` and `docs/manual`.
+**What is next:** phase 8 is being scoped (a comprehensive, translated, autocompleted ingredient
+catalogue — brainstorming in progress as of 2026-09-03; the existing autocomplete already matches
+on a typed substring, `catalogue.filter { it.normalisedName.contains(needle) }`, so the missing
+piece is data, and how a built-in ingredient's name should follow the app language the way built-in
+tags already do is the open design question).
+
+**Added after phase 7, 2026-09-03: per-app language selection.** Settings now has a language picker
+(System / Italiano / English), independent of the device's own language. The old
+`PreferencesRepository.setLanguage`/`UserPreferences.language` fields (dead code, phase 7 found them
+unused) were removed; `LocaleController` (`:core:domain` interface, `AppCompatLocaleController` in
+`:core:ui`) is the one place the choice lives now, via `AppCompatDelegate` + AppCompat's own
+persisted storage. **A real gotcha, found only by testing switching the language live on-device**:
+`AppCompatDelegate.setApplicationLocales()` alone does not update the *running* app on a plain
+`ComponentActivity` — its live-apply hooks target `AppCompatActivity`, and making `MainActivity` one
+crashes immediately (`Theme.ProPortion` isn't a `Theme.AppCompat` descendant, and becoming one for a
+Compose-only app just for this would be the wrong trade). The fix that actually works, verified on
+the Fairphone 3 (API 33) by switching languages back and forth with no restart: call the platform
+`LocaleManager` directly on API 33+ (the same mechanism the device's own Settings > Apps > Language
+screen uses), and wrap `MainActivity.attachBaseContext` with `AppCompatDelegate`'s persisted choice
+for API 26–32, where no such platform API exists — a language change there takes effect on
+`recreate()` the same way, just via a different, older mechanism. `docs/public/en/`'s screenshots
+are still Italian-locale copies, disclosed in the doc itself, pending a design review Marco wants to
+do before recapturing screenshots for both `docs/public` and `docs/manual`.
 
 Phase 6's and phase 7's per-task briefs, reports and full progress ledgers (including every ruling
 made while executing them) are kept at `.superpowers/sdd/2026-09-01-phase-6-home-shopping-cooking-mode/`

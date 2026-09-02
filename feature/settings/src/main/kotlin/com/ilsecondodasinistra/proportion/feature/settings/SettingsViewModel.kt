@@ -3,6 +3,7 @@ package com.ilsecondodasinistra.proportion.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.proportion.core.data.PendingImport
+import com.ilsecondodasinistra.proportion.core.domain.LocaleController
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
@@ -29,9 +30,12 @@ class SettingsViewModel @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val transferRepository: TransferRepository,
     private val pendingImport: PendingImport,
+    private val localeController: LocaleController,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _uiState = MutableStateFlow(
+        SettingsUiState(language = AppLanguage.fromTag(localeController.currentTag())),
+    )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     /** Held between the preview and the confirmation, so the file is read only once. */
@@ -65,6 +69,16 @@ class SettingsViewModel @Inject constructor(
 
     fun onDynamicColourChange(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setDynamicColour(enabled) }
+    }
+
+    /**
+     * Takes effect immediately — [LocaleController] is the one thing here that isn't a
+     * fire-and-forget preference write, since the running screens need to pick up the new
+     * language, so the caller (the screen) also recreates the activity right after this.
+     */
+    fun onLanguageChange(language: AppLanguage) {
+        localeController.setTag(language.tag)
+        _uiState.update { it.copy(language = language) }
     }
 
     /** @param writer writes the backup text wherever the user chose. */

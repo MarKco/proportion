@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.proportion.feature.settings
 
+import android.app.Activity
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,6 +88,13 @@ fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel()) {
         snackbarHostState = snackbarHostState,
         onThemeChange = viewModel::onThemeChange,
         onDynamicColourChange = viewModel::onDynamicColourChange,
+        onLanguageChange = { language ->
+            viewModel.onLanguageChange(language)
+            // The running screens are already inflated in the old language; AppCompat's own
+            // recreation hook targets AppCompatActivity, which MainActivity isn't, so this asks
+            // explicitly rather than assuming it happens on its own.
+            (context as? Activity)?.recreate()
+        },
         onBackupClick = { createBackup.launch(defaultBackupName()) },
         onRestoreClick = { openBackup.launch(arrayOf("*/*")) },
         onMerge = { viewModel.onRestoreConfirmed(ImportMode.MERGE) },
@@ -109,6 +117,7 @@ fun SettingsScreen(
     snackbarHostState: SnackbarHostState,
     onThemeChange: (ThemeMode) -> Unit,
     onDynamicColourChange: (Boolean) -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onMerge: () -> Unit,
@@ -182,6 +191,35 @@ fun SettingsScreen(
             )
 
             HorizontalDivider()
+            SectionTitle(stringResource(R.string.settings_language))
+
+            Column(modifier = Modifier.selectableGroup()) {
+                AppLanguage.entries.forEach { language ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = state.language == language,
+                                onClick = { onLanguageChange(language) },
+                                role = Role.RadioButton,
+                            )
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .testTag("language_${language.name}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = state.language == language,
+                            onClick = null,
+                        )
+                        Text(
+                            text = stringResource(language.labelRes()),
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider()
             SectionTitle(stringResource(R.string.settings_data))
 
             ListItem(
@@ -244,4 +282,10 @@ private fun ThemeMode.labelRes(): Int = when (this) {
     ThemeMode.SYSTEM -> R.string.settings_theme_system
     ThemeMode.LIGHT -> R.string.settings_theme_light
     ThemeMode.DARK -> R.string.settings_theme_dark
+}
+
+private fun AppLanguage.labelRes(): Int = when (this) {
+    AppLanguage.SYSTEM -> R.string.settings_language_system
+    AppLanguage.ITALIAN -> R.string.settings_language_italian
+    AppLanguage.ENGLISH -> R.string.settings_language_english
 }

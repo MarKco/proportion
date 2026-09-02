@@ -68,6 +68,9 @@ dependencies {
     implementation(projects.feature.settings)
 
     implementation(libs.androidx.core.ktx)
+    // Only for AndroidManifest.xml's AppLocalesMetadataHolderService reference — the app module
+    // never calls AppCompat directly, that lives behind LocaleController in :core:ui.
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

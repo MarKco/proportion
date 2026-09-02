@@ -13,6 +13,7 @@ dependencies {
     api(projects.core.designsystem)
 
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)

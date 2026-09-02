@@ -1,3 +1,5 @@
+<img src="docs/assets/icon.png" alt="ProPortion icon" width="96" align="left" />
+
 # ProPortion
 
 ProPortion is an offline Android app for rescaling cooking recipes. Store a recipe with its

@@ -16,6 +16,4 @@ class PreferencesRepositoryImpl @Inject constructor(
     override suspend fun setThemeMode(mode: ThemeMode) = dataSource.setThemeMode(mode)
 
     override suspend fun setDynamicColour(enabled: Boolean) = dataSource.setDynamicColour(enabled)
-
-    override suspend fun setLanguage(tag: String?) = dataSource.setLanguage(tag)
 }

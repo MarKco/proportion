@@ -8,6 +8,10 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_dynamic_colour">Colours from the wallpaper</string>
     <string name="settings_dynamic_colour_off">When off, the ProPortion pastel palette is used</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Follow the system</string>
+    <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_english">English</string>
     <string name="settings_data">Your recipes</string>
     <string name="settings_backup">Back up all recipes</string>
     <string name="settings_backup_hint">Writes a .proportion file wherever you choose.</string>

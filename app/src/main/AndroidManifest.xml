@@ -33,6 +33,17 @@
                 <data android:pathPattern=".*\\..*\\.proportion" />
             </intent-filter>
         </activity>
+
+        <!-- Lets AppCompat remember the app-language choice on its own, on every Android version
+             this app supports, instead of the app keeping a second copy of that state. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
     </application>
 
 </manifest>

@@ -29,7 +29,6 @@ class UserPreferencesDataSource @Inject constructor(
                 ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM,
             useDynamicColour = stored[DYNAMIC_COLOUR] ?: true,
-            language = stored[LANGUAGE],
         )
     }
 
@@ -41,15 +40,8 @@ class UserPreferencesDataSource @Inject constructor(
         store.edit { it[DYNAMIC_COLOUR] = enabled }
     }
 
-    suspend fun setLanguage(tag: String?) {
-        store.edit { prefs ->
-            if (tag == null) prefs.remove(LANGUAGE) else prefs[LANGUAGE] = tag
-        }
-    }
-
     private companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOUR = booleanPreferencesKey("dynamic_colour")
-        val LANGUAGE = stringPreferencesKey("language")
     }
 }

@@ -8,5 +8,4 @@ interface PreferencesRepository {
     fun observePreferences(): Flow<UserPreferences>
     suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setDynamicColour(enabled: Boolean)
-    suspend fun setLanguage(tag: String?)
 }

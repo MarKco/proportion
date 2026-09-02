@@ -31,7 +31,6 @@ class UserPreferencesDataSourceTest {
 
         assertThat(prefs.themeMode).isEqualTo(ThemeMode.SYSTEM)
         assertThat(prefs.useDynamicColour).isTrue()
-        assertThat(prefs.language).isNull()
     }
 
     @Test
@@ -46,14 +45,5 @@ class UserPreferencesDataSourceTest {
         dataSource.setDynamicColour(false)
 
         assertThat(dataSource.preferences.first().useDynamicColour).isFalse()
-    }
-
-    @Test
-    fun `clearing the language falls back to the system language`() = runTest {
-        dataSource.setLanguage("it")
-        assertThat(dataSource.preferences.first().language).isEqualTo("it")
-
-        dataSource.setLanguage(null)
-        assertThat(dataSource.preferences.first().language).isNull()
     }
 }
