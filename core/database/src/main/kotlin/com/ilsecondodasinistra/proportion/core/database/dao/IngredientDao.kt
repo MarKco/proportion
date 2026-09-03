@@ -25,6 +25,9 @@ interface IngredientDao {
     )
     fun observeInUse(): Flow<List<IngredientEntity>>
 
+    @Query("SELECT * FROM ingredients WHERE key = :key LIMIT 1")
+    suspend fun findByKey(key: String): IngredientEntity?
+
     @Query("SELECT * FROM ingredients WHERE normalised_name = :normalisedName LIMIT 1")
     suspend fun findByNormalisedName(normalisedName: String): IngredientEntity?
 

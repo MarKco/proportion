@@ -86,7 +86,8 @@ object ProportionCodec {
         tags = tags.map { it.toWireTag() },
         ingredients = ingredients.sortedBy { it.position }.map { line ->
             WireIngredient(
-                name = line.ingredient.name,
+                name = line.ingredient.key?.let { "${ProportionFile.BUILT_IN_INGREDIENT_PREFIX}$it" }
+                    ?: line.ingredient.name,
                 qty = line.quantity,
                 unit = line.unit.name,
                 display = line.displayText,

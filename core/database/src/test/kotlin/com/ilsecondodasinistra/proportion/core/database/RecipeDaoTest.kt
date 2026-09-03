@@ -33,7 +33,7 @@ class RecipeDaoTest {
             ApplicationProvider.getApplicationContext(),
             ProPortionDatabase::class.java,
         )
-            .addCallback(ProPortionDatabase.seedCallback())
+            .addCallback(ProPortionDatabase.seedCallback(ApplicationProvider.getApplicationContext()))
             .allowMainThreadQueries()
             .build()
         recipeDao = db.recipeDao()
@@ -45,8 +45,12 @@ class RecipeDaoTest {
     fun tearDown() = db.close()
 
     private suspend fun seedCake(): String {
-        val flour = IngredientEntity("ing-flour", "Farina 00", "farina 00", MeasureUnit.GRAM)
-        val eggs = IngredientEntity("ing-eggs", "Uova", "uova", MeasureUnit.EGG)
+        val flour = IngredientEntity(
+            "ing-flour", key = null, "Farina 00", "farina 00", isBuiltIn = false, defaultUnit = MeasureUnit.GRAM,
+        )
+        val eggs = IngredientEntity(
+            "ing-eggs", key = null, "Uova", "uova", isBuiltIn = false, defaultUnit = MeasureUnit.EGG,
+        )
         ingredientDao.upsertAll(listOf(flour, eggs))
 
         val dessertTagId = tagDao.observeAll().first().first { it.key == "dessert" }.id
@@ -69,7 +73,9 @@ class RecipeDaoTest {
     }
 
     private suspend fun seedRisotto() {
-        val rice = IngredientEntity("ing-rice", "Riso", "riso", MeasureUnit.GRAM)
+        val rice = IngredientEntity(
+            "ing-rice", key = null, "Riso", "riso", isBuiltIn = false, defaultUnit = MeasureUnit.GRAM,
+        )
         ingredientDao.upsertAll(listOf(rice))
 
         val firstCourseId = tagDao.observeAll().first().first { it.key == "first_course" }.id
@@ -105,6 +111,27 @@ class RecipeDaoTest {
         seedRisotto()
 
         val found = recipeDao.observeFiltered(query = "torta").first()
+
+        assertThat(found.map { it.recipe.id }).containsExactly("r-cake")
+    }
+
+    @Test
+    fun `free text search matches a built-in ingredient via the resolved-id list`() = runTest {
+        seedCake()
+        seedRisotto()
+
+        // A query matching nothing by title/notes/normalised_name here - this proves
+        // matchingBuiltInIds alone can surface a recipe, the mechanism RecipeRepositoryImpl relies
+        // on for built-in ingredients whose stored normalised_name is frozen to their raw key.
+        val found = recipeDao.filtered(
+            query = "flour_00",
+            tagIds = emptyList(),
+            tagCount = 0,
+            ingredientIds = emptyList(),
+            ingredientCount = 0,
+            sort = "RECENT",
+            matchingBuiltInIds = listOf("ing-flour"),
+        ).first()
 
         assertThat(found.map { it.recipe.id }).containsExactly("r-cake")
     }
@@ -172,7 +199,9 @@ class RecipeDaoTest {
 
         assertThat(recipeDao.observeAll().first()).isEmpty()
         assertThat(recipeDao.countLines()).isEqualTo(0)
-        assertThat(ingredientDao.observeAll().first().map { it.id })
+        // observeAll() now also carries the seeded built-in catalogue (Task 6); filter down to the
+        // user-created ingredients this test actually cares about surviving the cascade.
+        assertThat(ingredientDao.observeAll().first().filterNot { it.isBuiltIn }.map { it.id })
             .containsExactly("ing-flour", "ing-eggs")
     }
 
@@ -180,7 +209,16 @@ class RecipeDaoTest {
     fun `the ingredient filter list only offers ingredients actually used`() = runTest {
         seedCake()
         ingredientDao.upsertAll(
-            listOf(IngredientEntity("ing-unused", "Zafferano", "zafferano", MeasureUnit.SACHET)),
+            listOf(
+                IngredientEntity(
+                    "ing-unused",
+                    key = null,
+                    "Zafferano",
+                    "zafferano",
+                    isBuiltIn = false,
+                    defaultUnit = MeasureUnit.SACHET,
+                ),
+            ),
         )
 
         val inUse = ingredientDao.observeInUse().first().map { it.id }

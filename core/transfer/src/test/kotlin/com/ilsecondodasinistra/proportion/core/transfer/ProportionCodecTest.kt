@@ -10,9 +10,18 @@ import org.junit.Test
 
 class ProportionCodecTest {
 
-    private val flour = Ingredient("ing-1", "Farina 00", "farina 00", MeasureUnit.GRAM)
-    private val eggs = Ingredient("ing-2", "Uova", "uova", MeasureUnit.EGG)
-    private val salt = Ingredient("ing-3", "Sale", "sale", MeasureUnit.TO_TASTE)
+    private val flour = Ingredient(
+        id = "ing-1", key = null, name = "Farina 00", normalisedName = "farina 00",
+        isBuiltIn = false, defaultUnit = MeasureUnit.GRAM,
+    )
+    private val eggs = Ingredient(
+        id = "ing-2", key = null, name = "Uova", normalisedName = "uova",
+        isBuiltIn = false, defaultUnit = MeasureUnit.EGG,
+    )
+    private val salt = Ingredient(
+        id = "ing-3", key = null, name = "Sale", normalisedName = "sale",
+        isBuiltIn = false, defaultUnit = MeasureUnit.TO_TASTE,
+    )
 
     private val cake = Recipe(
         id = "9f2c-1111",

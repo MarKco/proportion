@@ -126,9 +126,17 @@ fun RecipeDetailScreen(
                 },
                 actions = {
                     if (content != null) {
+                        IconButton(
+                            onClick = { onEdit(content.recipe.id) },
+                            modifier = Modifier.testTag("detail_edit"),
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = stringResource(R.string.recipe_detail_edit),
+                            )
+                        }
                         FavouriteAction(content.recipe.isFavourite, onFavouriteToggle)
                         OverflowMenu(
-                            onEdit = { onEdit(content.recipe.id) },
                             onShareText = onShareText,
                             onShareFile = { onShareFile(content.recipe.title) },
                             onDelete = onDelete,
@@ -174,7 +182,6 @@ private fun FavouriteAction(isFavourite: Boolean, onToggle: () -> Unit) {
 
 @Composable
 private fun OverflowMenu(
-    onEdit: () -> Unit,
     onShareText: () -> Unit,
     onShareFile: () -> Unit,
     onDelete: () -> Unit,
@@ -188,15 +195,6 @@ private fun OverflowMenu(
         )
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.recipe_detail_edit)) },
-            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-            onClick = {
-                expanded = false
-                onEdit()
-            },
-            modifier = Modifier.testTag("detail_edit"),
-        )
         DropdownMenuItem(
             text = { Text(stringResource(R.string.recipe_share_text)) },
             leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },

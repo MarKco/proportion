@@ -34,8 +34,14 @@ object EditorTestData {
     val dessertTag = Tag(id = "tag-dessert", key = "dessert", name = null, isBuiltIn = true)
     val ovenTag = Tag(id = "tag-oven", key = "oven", name = null, isBuiltIn = true)
 
-    val flour = Ingredient("ing-farina", "Farina 00", "farina 00", MeasureUnit.GRAM)
-    val eggs = Ingredient("ing-uova", "Uova", "uova", MeasureUnit.EGG)
+    val flour = Ingredient(
+        id = "ing-farina", key = null, name = "Farina 00", normalisedName = "farina 00",
+        isBuiltIn = false, defaultUnit = MeasureUnit.GRAM,
+    )
+    val eggs = Ingredient(
+        id = "ing-uova", key = null, name = "Uova", normalisedName = "uova",
+        isBuiltIn = false, defaultUnit = MeasureUnit.EGG,
+    )
 
     val cake = Recipe(
         id = "r-cake",
@@ -92,8 +98,10 @@ class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : Ingred
 
         val ingredient = Ingredient(
             id = "ing-$normalised",
+            key = null,
             name = name.trim(),
             normalisedName = normalised,
+            isBuiltIn = false,
             defaultUnit = defaultUnit,
         )
         created += ingredient

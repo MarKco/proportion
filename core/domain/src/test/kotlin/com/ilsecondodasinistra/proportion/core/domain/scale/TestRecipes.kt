@@ -13,8 +13,10 @@ internal object TestRecipes {
 
     fun ingredient(name: String, unit: MeasureUnit = MeasureUnit.GRAM) = Ingredient(
         id = "ing-$name",
+        key = null,
         name = name,
         normalisedName = name.lowercase(),
+        isBuiltIn = false,
         defaultUnit = unit,
     )
 

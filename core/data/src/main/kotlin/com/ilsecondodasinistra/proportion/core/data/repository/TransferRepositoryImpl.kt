@@ -1,12 +1,15 @@
 package com.ilsecondodasinistra.proportion.core.data.repository
 
 import com.ilsecondodasinistra.proportion.core.data.toDomain
+import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.RecipeDao
 import com.ilsecondodasinistra.proportion.core.database.dao.TagDao
+import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.repository.IngredientRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.TagRepository
+import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
@@ -18,6 +21,7 @@ import com.ilsecondodasinistra.proportion.core.transfer.ImportPreview
 import com.ilsecondodasinistra.proportion.core.transfer.ProportionCodec
 import com.ilsecondodasinistra.proportion.core.transfer.ProportionFile
 import com.ilsecondodasinistra.proportion.core.transfer.TransferRepository
+import com.ilsecondodasinistra.proportion.core.transfer.WireIngredient
 import com.ilsecondodasinistra.proportion.core.transfer.WireRecipe
 import java.util.UUID
 import javax.inject.Inject
@@ -33,6 +37,8 @@ import kotlinx.coroutines.flow.first
 class TransferRepositoryImpl @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
+    private val ingredientDao: IngredientDao,
+    private val namer: BuiltInIngredientNamer,
     private val tagRepository: TagRepository,
     private val recipeDao: RecipeDao,
     private val tagDao: TagDao,
@@ -96,7 +102,7 @@ class TransferRepositoryImpl @Inject constructor(
             val unit = MeasureUnit.valueOf(wire.unit)
             RecipeIngredient(
                 id = UUID.randomUUID().toString(),
-                ingredient = ingredientRepository.findOrCreate(wire.name, unit),
+                ingredient = resolveIngredient(wire, unit),
                 position = position,
                 quantity = wire.qty,
                 unit = unit,
@@ -115,6 +121,16 @@ class TransferRepositoryImpl @Inject constructor(
             notes = notes,
         )
     }
+
+    private suspend fun resolveIngredient(wire: WireIngredient, unit: MeasureUnit): Ingredient =
+        if (wire.name.startsWith(ProportionFile.BUILT_IN_INGREDIENT_PREFIX)) {
+            val key = wire.name.removePrefix(ProportionFile.BUILT_IN_INGREDIENT_PREFIX)
+            // An unknown built-in key comes from a newer app: fall back to a literal ingredient rather
+            // than dropping the line — unlike a tag, an ingredient line is not optional.
+            ingredientDao.findByKey(key)?.toDomain(namer) ?: ingredientRepository.findOrCreate(key, unit)
+        } else {
+            ingredientRepository.findOrCreate(wire.name, unit)
+        }
 
     private suspend fun resolveTag(wireTag: String): Tag? = when {
         wireTag.startsWith(ProportionFile.BUILT_IN_TAG_PREFIX) -> {

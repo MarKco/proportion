@@ -9,6 +9,7 @@ import com.ilsecondodasinistra.proportion.core.data.repository.ScaleVariantRepos
 import com.ilsecondodasinistra.proportion.core.data.repository.ShoppingRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.data.repository.TagRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
+import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
@@ -38,6 +39,7 @@ class RepositoryTest {
 
     private val time = TimeProvider { 1_000L }
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val namer = BuiltInIngredientNamer { key -> "[$key]" }
 
     @Before
     fun setUp() {
@@ -45,15 +47,15 @@ class RepositoryTest {
             ApplicationProvider.getApplicationContext(),
             ProPortionDatabase::class.java,
         )
-            .addCallback(ProPortionDatabase.seedCallback())
+            .addCallback(ProPortionDatabase.seedCallback(ApplicationProvider.getApplicationContext()))
             .allowMainThreadQueries()
             .build()
 
-        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), time)
-        ingredients = IngredientRepositoryImpl(db.ingredientDao())
+        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), namer, time)
+        ingredients = IngredientRepositoryImpl(db.ingredientDao(), namer)
         tags = TagRepositoryImpl(db.tagDao())
         variants = ScaleVariantRepositoryImpl(db.scaleVariantDao(), json, time)
-        shopping = ShoppingRepositoryImpl(db.shoppingDao(), db.ingredientDao(), DefaultUnitConverter())
+        shopping = ShoppingRepositoryImpl(db.shoppingDao(), db.ingredientDao(), namer, DefaultUnitConverter())
     }
 
     @After
@@ -110,7 +112,8 @@ class RepositoryTest {
         val again = ingredients.findOrCreate("  BASILICO ", MeasureUnit.LEAF)
 
         assertThat(again.id).isEqualTo(first.id)
-        assertThat(ingredients.observeAll().first()).hasSize(1)
+        // Count only user-created rows: the catalogue also carries the seeded built-in ingredients.
+        assertThat(ingredients.observeAll().first().count { !it.isBuiltIn }).isEqualTo(1)
     }
 
     @Test
@@ -138,7 +141,9 @@ class RepositoryTest {
         val flour = ingredients.findOrCreate("Farina", MeasureUnit.GRAM)
         db.ingredientDao().upsertAll(listOf(flour.copy(densityGramsPerMl = 0.55).toEntity()))
 
-        val stored = ingredients.observeAll().first().single()
+        // Find this specific row rather than .single(): the catalogue also carries the seeded
+        // built-in ingredients.
+        val stored = ingredients.observeAll().first().single { it.id == flour.id }
 
         assertThat(stored.densityGramsPerMl).isEqualTo(0.55)
     }
@@ -152,6 +157,27 @@ class RepositoryTest {
 
         assertThat(found.map { it.id }).containsExactly("r-1")
         assertThat(missing).isEmpty()
+    }
+
+    @Test
+    fun `the filter also finds a recipe by a built-in ingredient's resolved name`() = runTest {
+        val flour = db.ingredientDao().findByKey("flour_00")!!.toDomain(namer)
+        recipes.upsert(
+            Recipe(
+                id = "r-builtin-search",
+                title = "Pane",
+                servings = 1,
+                steps = emptyList(),
+                ingredients = listOf(RecipeIngredient("l-1", flour, 0, 500.0, MeasureUnit.GRAM)),
+                tags = emptyList(),
+            ),
+        )
+
+        // The seeded row's stored normalised_name is frozen to the raw key "flour_00" - this only
+        // passes because the resolved name (here the fake namer's "[flour_00]") is what's searched.
+        val found = recipes.observeRecipes(RecipeFilter(query = "flour_00")).first()
+
+        assertThat(found.map { it.id }).containsExactly("r-builtin-search")
     }
 
     @Test
@@ -219,8 +245,37 @@ class RepositoryTest {
         recipes.delete("r-1")
 
         assertThat(recipes.observeRecipes().first()).isEmpty()
-        assertThat(ingredients.observeAll().first()).hasSize(2)
+        // Count only user-created rows: the catalogue also carries the seeded built-in ingredients.
+        assertThat(ingredients.observeAll().first().count { !it.isBuiltIn }).isEqualTo(2)
         assertThat(ingredients.observeInUse().first()).isEmpty()
+    }
+
+    @Test
+    fun `saving a recipe with a built-in ingredient does not rewrite its seeded placeholder row`() = runTest {
+        val flour = db.ingredientDao().findByKey("flour_00")!!.toDomain(namer)
+        recipes.upsert(
+            Recipe(
+                id = "r-builtin",
+                title = "Pane",
+                servings = 1,
+                steps = emptyList(),
+                ingredients = listOf(RecipeIngredient("l-1", flour, 0, 500.0, MeasureUnit.GRAM)),
+                tags = emptyList(),
+            ),
+        )
+
+        val stillSeeded = db.ingredientDao().findByKey("flour_00")!!
+        assertThat(stillSeeded.name).isEqualTo("flour_00")
+        assertThat(stillSeeded.normalisedName).isEqualTo("flour_00")
+    }
+
+    @Test
+    fun `typing a built-in ingredient's raw key as free text resolves to the seeded row`() = runTest {
+        val resolved = ingredients.findOrCreate("almond", MeasureUnit.GRAM)
+
+        assertThat(resolved.isBuiltIn).isTrue()
+        assertThat(resolved.id).isEqualTo(db.ingredientDao().findByKey("almond")!!.id)
+        assertThat(ingredients.observeAll().first().count { !it.isBuiltIn }).isEqualTo(0)
     }
 
     private fun scaledLine(

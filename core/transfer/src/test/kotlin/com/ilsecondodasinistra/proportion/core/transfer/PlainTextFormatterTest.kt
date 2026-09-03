@@ -35,21 +35,30 @@ class PlainTextFormatterTest {
         ingredients = listOf(
             RecipeIngredient(
                 "l-1",
-                Ingredient("i-1", "Farina 00", "farina 00", MeasureUnit.GRAM),
+                Ingredient(
+                    id = "i-1", key = null, name = "Farina 00", normalisedName = "farina 00",
+                    isBuiltIn = false, defaultUnit = MeasureUnit.GRAM,
+                ),
                 0,
                 300.0,
                 MeasureUnit.GRAM,
             ),
             RecipeIngredient(
                 "l-2",
-                Ingredient("i-2", "Uova", "uova", MeasureUnit.EGG),
+                Ingredient(
+                    id = "i-2", key = null, name = "Uova", normalisedName = "uova",
+                    isBuiltIn = false, defaultUnit = MeasureUnit.EGG,
+                ),
                 1,
                 2.0,
                 MeasureUnit.EGG,
             ),
             RecipeIngredient(
                 "l-3",
-                Ingredient("i-3", "Sale", "sale", MeasureUnit.TO_TASTE),
+                Ingredient(
+                    id = "i-3", key = null, name = "Sale", normalisedName = "sale",
+                    isBuiltIn = false, defaultUnit = MeasureUnit.TO_TASTE,
+                ),
                 2,
                 null,
                 MeasureUnit.TO_TASTE,

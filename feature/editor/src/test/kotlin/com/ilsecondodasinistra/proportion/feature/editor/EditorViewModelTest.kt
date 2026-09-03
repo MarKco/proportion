@@ -202,6 +202,36 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `picking a suggestion applies its default unit when the line's unit is incompatible`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            vm.onSuggestionPick(0, EditorTestData.eggs)
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().lines.single().unit).isEqualTo(MeasureUnit.EGG)
+        }
+    }
+
+    @Test
+    fun `picking a suggestion keeps an already-compatible unit instead of overwriting it`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            // KILOGRAM and flour's default (GRAM) are both mass units - the user's choice should win.
+            vm.onLineUnitChange(0, MeasureUnit.KILOGRAM)
+            vm.onSuggestionPick(0, EditorTestData.flour)
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().lines.single().unit).isEqualTo(MeasureUnit.KILOGRAM)
+        }
+    }
+
+    @Test
     fun `lines can be added, removed and reordered`() = runTest {
         val vm = viewModel()
         vm.uiState.test {

@@ -2,28 +2,29 @@
 
 ## Resume here (read this first after a break)
 
-**Where things stand:** phases 1 to 7 are done — v1 is feature-complete and polished. The app
-builds, installs, and does the whole job: enter a recipe, find it, rescale it four different ways,
-share it, back it up and restore it, see a dashboard, keep a shopping list, follow a recipe in
-cooking mode. Translations are complete and parity-checked, accessibility has had a real on-device
-pass (TalkBack + large text), the two motion animations the design system always promised are
-wired up, `docs/public` and `docs/manual` exist in both languages, and a release-signing mechanism
-is ready (no keystore created yet — that's Marco's own step whenever he has one; see
-`docs/private/release-checklist.md`). `./gradlew verifyAll` is green (detekt, lint, every test,
-a debug APK) and `./gradlew assembleRelease` succeeds unsigned. Verified end to end on a Fairphone 3
-(Android 13) on 2026-09-02.
+**Where things stand:** phases 1 to 8 are done. v1 is feature-complete and polished (phases 1-7),
+and phase 8 (2026-09-03) added the comprehensive, translated, autocompleted ingredient catalogue —
+see the dedicated entry below. The app builds, installs, and does the whole job: enter a recipe,
+find it, rescale it four different ways, share it, back it up and restore it, see a dashboard, keep
+a shopping list, follow a recipe in cooking mode, and now enter ingredients from a real 477-entry
+bilingual catalogue instead of typing every one from scratch. Translations are complete and
+parity-checked, accessibility has had a real on-device pass (TalkBack + large text), the two motion
+animations the design system always promised are wired up, `docs/public` and `docs/manual` exist in
+both languages, and a release-signing mechanism is ready (no keystore created yet — that's Marco's
+own step whenever he has one; see `docs/private/release-checklist.md`). `./gradlew verifyAll` is
+green (detekt, lint, every test, a debug APK) and `./gradlew assembleRelease` succeeds unsigned.
+Verified end to end on a Fairphone 3 (Android 13) on 2026-09-03, including a real schema migration
+against that device's own pre-existing recipes (zero data loss) and live bilingual autocomplete.
 
-**What is next:** phase 8 design is written and awaiting Marco's review at
-`docs/private/specs/2026-09-03-ingredient-catalogue-design.md` — a comprehensive, translated,
-autocompleted ingredient catalogue (~400-600 entries). The existing autocomplete already matches on
-a typed substring (`catalogue.filter { it.normalisedName.contains(needle) }`); this phase adds the
-missing data and the translation mechanism (built-in ingredients resolve through `strings.xml` at
-the repository boundary, the same way built-in tags follow the app language, via a new
-`BuiltInIngredientNamer`). The spec also flags a real gap found while grounding it: `.proportion`
-export/import has no built-in-ingredient equivalent of the tags' `builtin:` key prefix, so sharing
-a recipe between two devices set to different app languages would currently duplicate a built-in
-ingredient under a literal name — a fix is proposed in the spec's §5, pending Marco's decision on
-whether it's in scope for this phase. Next step once the spec is approved: writing-plans skill.
+**What is next:** phase 8's two known limitations (search by built-in ingredient name, and
+autocomplete always overwriting the unit) were both fixed right after shipping — see "Added after
+phase 8" below. No phase 9 has been scoped yet.
+
+**Note on tooling, 2026-09-03:** the `superpowers` Claude Code plugin (used for phases 6-8's
+brainstorm → spec → plan → subagent-driven-execution workflow) is now disabled — Marco turned it
+off, it was consuming too much context. Its written record survives on disk at `.superpowers/`
+(specs, plans, full execution ledgers for phases 6-8) even though the plugin/skills are gone;
+consult those before re-deriving context on anything they cover.
 
 **Added after phase 7, 2026-09-03: per-app language selection.** Settings now has a language picker
 (System / Italiano / English), independent of the device's own language. The old
@@ -63,10 +64,87 @@ isn't hidden from someone who might want to turn dynamic colour off. New strings
 (`settings_app_theme*`) added to both `values/` and `values-it/strings.xml` in `:feature:settings`;
 parity confirmed with `scripts/check-string-parity.sh`.
 
-Phase 6's and phase 7's per-task briefs, reports and full progress ledgers (including every ruling
-made while executing them) are kept at `.superpowers/sdd/2026-09-01-phase-6-home-shopping-cooking-mode/`
-and `.superpowers/sdd/2026-09-02-phase-7-polish/` for the record; nothing there needs restoring or
-resuming any more.
+**Phase 8, 2026-09-03: ingredient catalogue.** 477 built-in ingredients, translated Italian/English,
+covering all 16 categories of a new `IngredientCategory` enum (foundation-only — no UI surfaces it
+yet). `Ingredient`/`IngredientEntity` gained `key`/`isBuiltIn` (mirroring `Tag`) plus `category`;
+built-in names resolve at the repository boundary via a new `BuiltInIngredientNamer`
+(`core/domain` interface, `AndroidIngredientNamer` in `core/ui`, using `Resources.getIdentifier`
+rather than a 477-branch `when`, which detekt's `LongMethod` limit would reject). Seed data lives
+in `core/database/src/main/assets/ingredients.json`, loaded once via a shared function called from
+*both* `Room.Callback.onCreate` (fresh installs) and a new additive `Migration(1, 2)` (existing
+installs) — `onCreate` alone would have left every upgrading install with an empty catalogue
+forever. Spec: `docs/private/specs/2026-09-03-ingredient-catalogue-design.md`. Plan and full
+execution ledger (every task, every ruling, every gap found mid-execution — three real ones the
+original spec/plan missed, all fixed): `docs/private/plans/2026-09-03-phase-8-ingredient-catalogue.md`
+and `.superpowers/sdd/2026-09-03-phase-8-ingredient-catalogue/`.
+
+The `.proportion` export/import format got a matching fix in the same phase (Marco's own call,
+made when reviewing the spec): built-in ingredients now travel by key (`builtin:<key>`, mirroring
+how built-in tags already worked), not by their current-language literal name — otherwise sharing a
+recipe between two devices set to different app languages would have duplicated a built-in
+ingredient under a literal name on import.
+
+**Two real bugs found by the final whole-plan review, in pre-existing code this phase's own tasks
+never touched, fixed before shipping:** `RecipeRepositoryImpl.upsert()` was silently overwriting a
+built-in ingredient's seeded placeholder row with current-language text on every recipe save
+(violating the "the placeholder is never read or written" design assumption); and `findOrCreate`
+could silently fail — and later crash a recipe save with a foreign-key error — for ingredients
+whose raw catalogue key differs from its displayed name in both languages (e.g. typing "almond"
+when the catalogue shows "Almonds"/"Mandorle"). Both are fixed, with two new regression tests that
+were proven to actually catch the bugs (reverted the fix, watched the test fail, restored it,
+watched it pass — done independently by both the implementer and a second reviewer).
+
+**Two known limitations, left for Marco to decide on rather than fixed in a rush:** searching
+recipes by ingredient name doesn't find a built-in ingredient by its localised name (only
+autocomplete/entry is affected — `RecipeDao.filtered`'s SQL reads the catalogue's raw English-key
+column directly; a proper fix needs that query restructured to resolve names in Kotlin, judged too
+risky to rush through the one fix wave a final-review cap allows); and picking an autocomplete
+suggestion always overwrites the ingredient line's unit with that ingredient's default, even if the
+user had already typed a different one (pre-existing behaviour, more noticeable now that 477
+curated defaults exist). See the spec's §8 for the full detail on both.
+
+**Added after phase 8, 2026-09-03: fixed both known limitations, plus two UI requests.** All four
+done manually (the `superpowers` plugin was disabled partway through this work — see the tooling
+note above), with real unit tests and a live on-device check for each:
+
+- **Recipe search now finds built-in ingredients by their localised name.**
+  `RecipeDao.filtered` gained a `matchingBuiltInIds: List<String>` parameter (defaults to empty, so
+  every existing caller is unaffected); its ingredient-name `EXISTS` clause now also matches
+  `ri.ingredient_id IN (:matchingBuiltInIds)`. `RecipeRepositoryImpl.observeRecipes` computes that
+  list in Kotlin (resolving each built-in ingredient's name via the namer and checking it against
+  the search query) before calling `filtered`, only when the query is non-blank.
+- **Picking an autocomplete suggestion no longer overwrites a unit already in the same measurement
+  category.** `EditorViewModel.onSuggestionPick` now compares `line.unit.category` against
+  `ingredient.defaultUnit.category` (`MeasureUnit`'s existing `UnitCategory` — MASS/VOLUME/COUNT/
+  APPROXIMATE) and only replaces the unit when they differ — e.g. picking a gram-default ingredient
+  while kilograms is already set keeps kilograms.
+- **The keyboard no longer hides the suggestion list right after "Aggiungi ingrediente".** The
+  newly-added row requests focus once and scrolls itself into view once, with ~420dp of clearance
+  reserved below it (three rows of suggestion chips' worth) — calculated a single time, right when
+  the keyboard finishes opening, deliberately *before* any suggestions exist yet, so later
+  suggestion-driven resizes never trigger another scroll. Three real bugs found and fixed while
+  getting this right, all confirmed live on-device (screenshots taken, not just reasoned about):
+  (1) a zero-width `Rect` passed to `BringIntoViewRequester` is treated as nothing to bring into
+  view and silently does nothing — must use the row's real measured width; (2)
+  `WindowInsets.isImeVisible` flips true as soon as the keyboard *starts* animating in, not once it
+  finishes, so scrolling immediately measures against a still-shrinking viewport and undershoots —
+  fixed by polling the live `WindowInsets.ime` inset for a few consecutive stable frames rather than
+  guessing a fixed delay; (3) the worst one — keying the scroll `LaunchedEffect` on the row's
+  measured size caused it to re-fire on *every keystroke*, because the card keeps resizing as the
+  suggestion list appears/changes while typing, producing a visible scroll glitch on every letter
+  typed. Fixed by reading the size as a plain polled value inside the effect instead of as a
+  recomposition key, so the effect runs exactly once per focus request no matter how many times the
+  card resizes afterward.
+- **The recipe detail screen has a standalone edit (pencil) button, top-right, always visible** —
+  no need to open the overflow (⋮) menu first. The redundant "Modifica" entry was removed from that
+  menu, which now holds only share/delete.
+
+Phase 6's, phase 7's and phase 8's per-task briefs, reports and full progress ledgers (including
+every ruling made while executing them) are kept at
+`.superpowers/sdd/2026-09-01-phase-6-home-shopping-cooking-mode/`,
+`.superpowers/sdd/2026-09-02-phase-7-polish/` and
+`.superpowers/sdd/2026-09-03-phase-8-ingredient-catalogue/` for the record; nothing there needs
+restoring or resuming any more.
 
 **How to build and check:**
 
@@ -104,8 +182,11 @@ Living checklist, updated as work progresses. If a session ends, this file says 
 
 **Legend:** `[ ]` not started · `[~]` in progress · `[x]` done
 
-Last updated: 2026-09-03 (phases 1–7 complete; app theme picker added after phase 7; `verifyAll`
-green including `lint`, verified on a Fairphone 3 / Android 13)
+Last updated: 2026-09-03 (phases 1–8 complete; phase 8 added the 477-entry translated ingredient
+catalogue, then both its known limitations were fixed plus two UI requests (search by built-in
+ingredient name, unit-keeps-if-compatible, editor scroll clearance, top-level edit button);
+`verifyAll` and `assembleRelease` both green, verified on a Fairphone 3 / Android 13 against real
+pre-existing data)
 
 ## Phase 0 — Design
 - [x] Brainstorming and decisions
@@ -227,6 +308,63 @@ workflow with a hand-maintained test list, and no release signing config.
       real keystore whenever he has one); absent or incomplete, `assembleRelease` stays unsigned
       exactly as before. No keystore, password, or template file was created.
 - [x] docs/private (architecture, data model, scaling engine, format, ADRs) — done in phase 5
+
+## Phase 8 — Ingredient catalogue  <-- DONE
+Spec: `docs/private/specs/2026-09-03-ingredient-catalogue-design.md`. Plan:
+`docs/private/plans/2026-09-03-phase-8-ingredient-catalogue.md`. Marco's original ask: a
+comprehensive, correctly-translated pre-populated ingredient list, fast autocomplete on entry.
+
+- [x] Task 1 — `IngredientCategory` enum (16 values, foundation-only) + `Ingredient` gains
+      `key`/`isBuiltIn` (mirrors `Tag`) (4 tests, reviewed clean)
+- [x] Task 2 — `IngredientEntity`/`Converters` mirror the model change; schema bumped to version 2;
+      additive `Migration(1, 2)` (columns only at this point) + `MigrationTestHelper`-based test —
+      the brief's guessed 3-arg constructor was deprecated in the real `room-testing:2.8.4`, the
+      implementer found and used the real 2-arg one instead
+- [x] Task 3b (ad hoc, not in the plan) — Task 1's constructor change broke 8 test fixtures in
+      `:core:domain`/`:core:transfer`/three feature modules the spec never scoped; fixed as one
+      batched dispatch
+- [x] Task 3 — `BuiltInIngredientNamer` (`:core:domain`) + `AndroidIngredientNamer` (`:core:ui`,
+      `Resources.getIdentifier` rather than a 477-branch `when`, which detekt's `LongMethod` limit
+      would reject) + the first 48 real translated entries
+- [x] Task 4 — `EntityMappers`: built-in rows resolve both `name` *and* `normalisedName` at read
+      time (not just `name`) — the stored `normalised_name` would otherwise go stale the moment the
+      app language changes
+- [x] Task 5 — `IngredientRepositoryImpl`/`RecipeRepositoryImpl` take the namer; `findOrCreate`
+      rewritten to dedupe against the resolved catalogue in Kotlin instead of raw SQL (mirrors
+      `TagRepositoryImpl.findOrCreateUserTag`); found mid-task that `ShoppingRepositoryImpl` also
+      called `IngredientEntity.toDomain()` directly — a fourth call site the spec's ripple analysis
+      missed — folded into this task
+- [x] Task 6 — seed data (`ingredients.json`) + shared seeding function called from *both*
+      `Room.Callback.onCreate` and `Migration(1, 2)` — `onCreate` never fires for a database that
+      already exists, so seeding only from there would leave every upgrading install (including
+      Marco's own Fairphone) with an empty catalogue forever
+- [x] Task 7 — expanded the catalogue from 48 to **477 entries** across all 16 categories, each
+      with a natural (not literal/machine-translated) Italian name; guarded by a new
+      `IngredientResourceConsistencyTest` asserting every seeded key resolves in both languages
+- [x] Task 8 — `.proportion` export/import: built-in ingredients now travel by `builtin:<key>`
+      (mirrors the tags' existing mechanism) instead of by their current-language literal name, so
+      sharing a recipe between two devices set to different app languages binds to the same seeded
+      row instead of creating a duplicate; an unrecognised key falls back to a literal ingredient
+      (an ingredient line, unlike a tag, isn't optional, so it can't just be dropped)
+- [x] Task 9 — `verifyAll` and `assembleRelease` both green; verified live on the Fairphone 3
+      **against its own real pre-existing recipes**: schema migration ran with zero data loss,
+      autocomplete surfaced real seeded suggestions in Italian ("farin" → Farina 00, Farina di
+      mandorle, ...) and English ("choc" → Chocolate chips, Dark chocolate, ...) with an instant
+      language switch, built-in tags translated correctly too, no crash in logcat
+- [x] Final whole-plan review (the step this project runs once per phase, after every task's own
+      review) — found two real Critical bugs in pre-existing code no single task's diff could have
+      caught: recipe saves were silently overwriting a built-in ingredient's seeded placeholder row
+      with current-language text, and typing certain ingredients' raw English key (e.g. "almond",
+      when the catalogue displays "Almonds"/"Mandorle") could silently fail and later crash a save
+      with a foreign-key error. Both fixed in one dispatched fix wave, with two new regression tests
+      each independently proven to actually catch its bug (revert the fix, watch the test fail,
+      restore it, watch it pass — done twice, by both the fixer and a second reviewer). Also
+      corrected 7 translation nits and triaged every minor finding parked during the 9 tasks.
+      Two things were surfaced to Marco rather than fixed in the same rush — see the spec's §8 and
+      the "What is next" note above.
+
+Full execution ledger (every ruling, every gap found mid-execution, every review verdict):
+`.superpowers/sdd/2026-09-03-phase-8-ingredient-catalogue/progress.md`.
 
 ## Build environment (verified 2026-09-01)
 - Gradle 9.7.1 wrapper, AGP 9.4.0, Kotlin 2.3.21, KSP 2.3.11, Hilt 2.60.1, Room 2.8.4.

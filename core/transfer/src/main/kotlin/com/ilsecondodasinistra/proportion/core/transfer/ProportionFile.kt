@@ -28,6 +28,9 @@ data class ProportionFile(
 
         /** Built-in tags travel by key so they stay translated on the other side. */
         const val BUILT_IN_TAG_PREFIX = "builtin:"
+
+        /** Built-in ingredients travel by key too, same reason as [BUILT_IN_TAG_PREFIX]. */
+        const val BUILT_IN_INGREDIENT_PREFIX = "builtin:"
     }
 }
 

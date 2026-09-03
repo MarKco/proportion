@@ -75,7 +75,10 @@ class ShoppingListFormatterTest {
         checked: Boolean = false,
     ): ShoppingItem = ShoppingItem(
         id = "item-$name",
-        ingredient = Ingredient(id = "ing-$name", name = name, normalisedName = name.lowercase()),
+        ingredient = Ingredient(
+            id = "ing-$name", key = null, name = name, normalisedName = name.lowercase(),
+            isBuiltIn = false,
+        ),
         quantity = quantity,
         unit = unit,
         isChecked = checked,

@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
+import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionTheme
 import com.ilsecondodasinistra.proportion.feature.recipes.detail.DetailLine
 import com.ilsecondodasinistra.proportion.feature.recipes.detail.RecipeDetailScreen
@@ -26,13 +29,15 @@ class RecipeDetailScreenTest {
         variants = emptyList(),
     )
 
+    private var editedId: String? = null
+
     private fun render(state: RecipeDetailUiState) {
         composeTestRule.setContent {
             ProPortionTheme(dynamicColour = false) {
                 RecipeDetailScreen(
                     state = state,
                     onBack = {},
-                    onEdit = {},
+                    onEdit = { editedId = it },
                     onCook = {},
                     onFavouriteToggle = {},
                     onDelete = {},
@@ -49,5 +54,14 @@ class RecipeDetailScreenTest {
         composeTestRule
             .onNodeWithContentDescription(context.getString(R.string.recipe_detail_more_actions))
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun `a top-level edit button is always visible and reports the recipe id, no overflow menu needed`() {
+        render(content)
+
+        composeTestRule.onNodeWithTag("detail_edit").assertIsDisplayed().performClick()
+
+        assertThat(editedId).isEqualTo(content.recipe.id)
     }
 }

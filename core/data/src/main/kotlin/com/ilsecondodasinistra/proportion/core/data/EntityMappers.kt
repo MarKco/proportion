@@ -8,6 +8,8 @@ import com.ilsecondodasinistra.proportion.core.database.entity.RecipeWithRelatio
 import com.ilsecondodasinistra.proportion.core.database.entity.ScaleVariantEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.ShoppingItemEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.TagEntity
+import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
+import com.ilsecondodasinistra.proportion.core.domain.IngredientNames
 import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
@@ -15,19 +17,28 @@ import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
 import com.ilsecondodasinistra.proportion.core.model.ShoppingItem
 import com.ilsecondodasinistra.proportion.core.model.Tag
 
-fun IngredientEntity.toDomain() = Ingredient(
-    id = id,
-    name = name,
-    normalisedName = normalisedName,
-    defaultUnit = defaultUnit,
-    densityGramsPerMl = densityGramsPerMl,
-)
+fun IngredientEntity.toDomain(namer: BuiltInIngredientNamer): Ingredient {
+    val resolvedName = if (isBuiltIn) namer.name(key!!) else name
+    return Ingredient(
+        id = id,
+        key = key,
+        name = resolvedName,
+        normalisedName = if (isBuiltIn) IngredientNames.normalise(resolvedName) else normalisedName,
+        isBuiltIn = isBuiltIn,
+        defaultUnit = defaultUnit,
+        category = category,
+        densityGramsPerMl = densityGramsPerMl,
+    )
+}
 
 fun Ingredient.toEntity() = IngredientEntity(
     id = id,
+    key = key,
     name = name,
     normalisedName = normalisedName,
+    isBuiltIn = isBuiltIn,
     defaultUnit = defaultUnit,
+    category = category,
     densityGramsPerMl = densityGramsPerMl,
 )
 
@@ -47,9 +58,9 @@ fun Tag.toEntity() = TagEntity(
     colorIndex = colorIndex,
 )
 
-fun LineWithIngredient.toDomain() = RecipeIngredient(
+fun LineWithIngredient.toDomain(namer: BuiltInIngredientNamer) = RecipeIngredient(
     id = line.id,
-    ingredient = ingredient.toDomain(),
+    ingredient = ingredient.toDomain(namer),
     position = line.position,
     quantity = line.quantity,
     unit = line.unit,
@@ -68,12 +79,12 @@ fun RecipeIngredient.toEntity(recipeId: String) = RecipeIngredientEntity(
     note = note,
 )
 
-fun RecipeWithRelations.toDomain() = Recipe(
+fun RecipeWithRelations.toDomain(namer: BuiltInIngredientNamer) = Recipe(
     id = recipe.id,
     title = recipe.title,
     servings = recipe.servings,
     steps = recipe.steps,
-    ingredients = lines.sortedBy { it.line.position }.map { it.toDomain() },
+    ingredients = lines.sortedBy { it.line.position }.map { it.toDomain(namer) },
     tags = tags.map { it.toDomain() },
     notes = recipe.notes,
     isFavourite = recipe.isFavourite,

@@ -9,6 +9,7 @@ import com.ilsecondodasinistra.proportion.core.data.repository.ScaleVariantRepos
 import com.ilsecondodasinistra.proportion.core.data.repository.ShoppingRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.data.repository.TagRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.data.repository.TransferRepositoryImpl
+import com.ilsecondodasinistra.proportion.core.database.Migration1to2
 import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
 import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.RecipeDao
@@ -50,7 +51,8 @@ object DataModule {
     @Singleton
     fun database(@ApplicationContext context: Context): ProPortionDatabase =
         Room.databaseBuilder(context, ProPortionDatabase::class.java, ProPortionDatabase.NAME)
-            .addCallback(ProPortionDatabase.seedCallback())
+            .addMigrations(Migration1to2(context))
+            .addCallback(ProPortionDatabase.seedCallback(context))
             .build()
 
     @Provides fun recipeDao(db: ProPortionDatabase): RecipeDao = db.recipeDao()

@@ -44,7 +44,10 @@ object ShoppingTestData {
     const val flourId = "item-flour"
 
     private fun ingredient(name: String, unit: MeasureUnit) =
-        Ingredient(id = "ing-${name.lowercase()}", name = name, normalisedName = name.lowercase(), defaultUnit = unit)
+        Ingredient(
+            id = "ing-${name.lowercase()}", key = null, name = name, normalisedName = name.lowercase(),
+            isBuiltIn = false, defaultUnit = unit,
+        )
 
     /** Farina came from two recipes, so it should show it is shared; Sale is already checked. */
     val items = listOf(

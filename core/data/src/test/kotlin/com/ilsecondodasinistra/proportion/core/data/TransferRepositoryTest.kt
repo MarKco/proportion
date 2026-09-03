@@ -8,6 +8,7 @@ import com.ilsecondodasinistra.proportion.core.data.repository.RecipeRepositoryI
 import com.ilsecondodasinistra.proportion.core.data.repository.TagRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.data.repository.TransferRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
+import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
@@ -31,6 +32,7 @@ class TransferRepositoryTest {
     private lateinit var recipes: RecipeRepositoryImpl
     private lateinit var ingredients: IngredientRepositoryImpl
     private lateinit var transfer: TransferRepositoryImpl
+    private lateinit var namer: BuiltInIngredientNamer
 
     @Before
     fun setUp() {
@@ -38,16 +40,19 @@ class TransferRepositoryTest {
             ApplicationProvider.getApplicationContext(),
             ProPortionDatabase::class.java,
         )
-            .addCallback(ProPortionDatabase.seedCallback())
+            .addCallback(ProPortionDatabase.seedCallback(ApplicationProvider.getApplicationContext()))
             .allowMainThreadQueries()
             .build()
 
         val time = TimeProvider { 1_000L }
-        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), time)
-        ingredients = IngredientRepositoryImpl(db.ingredientDao())
+        namer = BuiltInIngredientNamer { key -> "[$key]" }
+        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), namer, time)
+        ingredients = IngredientRepositoryImpl(db.ingredientDao(), namer)
         transfer = TransferRepositoryImpl(
             recipeRepository = recipes,
             ingredientRepository = ingredients,
+            ingredientDao = db.ingredientDao(),
+            namer = namer,
             tagRepository = TagRepositoryImpl(db.tagDao()),
             recipeDao = db.recipeDao(),
             tagDao = db.tagDao(),
@@ -170,8 +175,9 @@ class TransferRepositoryTest {
 
         transfer.import(text, ImportMode.MERGE)
 
-        // Still two ingredients, not four: the names resolved to the rows already there.
-        assertThat(ingredients.observeAll().first().map { it.name })
+        // Still two user-created ingredients, not four: the names resolved to the rows already
+        // there. (The catalogue also carries the seeded built-in ingredients.)
+        assertThat(ingredients.observeAll().first().filterNot { it.isBuiltIn }.map { it.name })
             .containsExactly("Farina 00", "Uova")
     }
 
@@ -229,5 +235,64 @@ class TransferRepositoryTest {
     @Test
     fun `exporting a recipe that no longer exists returns nothing`() = runTest {
         assertThat(transfer.exportRecipe("nope")).isNull()
+    }
+
+    @Test
+    fun `a built-in ingredient exports by key, not by its localised name`() = runTest {
+        // Look the seeded row up directly by key rather than via findOrCreate, since the wire
+        // format's whole point is exporting by key, not by whatever text happens to resolve it.
+        val builtIn = db.ingredientDao().findByKey("flour_00")!!.toDomain(namer)
+        recipes.upsert(
+            Recipe(
+                id = "r-flour",
+                title = "Pane",
+                servings = 1,
+                steps = emptyList(),
+                ingredients = listOf(RecipeIngredient("l-1", builtIn, 0, 500.0, MeasureUnit.GRAM)),
+                tags = emptyList(),
+            ),
+        )
+
+        val text = transfer.exportRecipe("r-flour")!!
+
+        assertThat(text).contains("builtin:flour_00")
+        assertThat(text).doesNotContain(builtIn.name)
+    }
+
+    @Test
+    fun `importing a built-in ingredient by key binds to the seeded row`() = runTest {
+        val builtIn = db.ingredientDao().findByKey("flour_00")!!.toDomain(namer)
+        recipes.upsert(
+            Recipe(
+                id = "r-flour",
+                title = "Pane",
+                servings = 1,
+                steps = emptyList(),
+                ingredients = listOf(RecipeIngredient("l-1", builtIn, 0, 500.0, MeasureUnit.GRAM)),
+                tags = emptyList(),
+            ),
+        )
+        val text = transfer.exportRecipe("r-flour")!!
+        db.recipeDao().deleteAllRecipes()
+
+        transfer.import(text, ImportMode.MERGE)
+
+        val restored = recipes.observeRecipes().first().single()
+        assertThat(restored.ingredients.single().ingredient.id).isEqualTo(builtIn.id)
+        assertThat(ingredients.observeAll().first().filterNot { it.isBuiltIn }).isEmpty()
+    }
+
+    @Test
+    fun `importing an unrecognised built-in key falls back to a literal ingredient`() = runTest {
+        storeCake()
+        val exported = transfer.exportRecipe("r-cake")!!
+            .replace("\"Farina 00\"", "\"builtin:no_such_key_yet\"")
+        db.recipeDao().deleteAllRecipes()
+
+        transfer.import(exported, ImportMode.MERGE)
+
+        val restored = recipes.observeRecipes().first().single()
+        val fallback = restored.ingredients.first { it.ingredient.normalisedName.contains("no_such_key_yet") }
+        assertThat(fallback.ingredient.isBuiltIn).isFalse()
     }
 }

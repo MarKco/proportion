@@ -4,6 +4,7 @@ import com.ilsecondodasinistra.proportion.core.data.toDomain
 import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.ShoppingDao
 import com.ilsecondodasinistra.proportion.core.database.entity.ShoppingItemEntity
+import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.repository.ShoppingRepository
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledLine
 import com.ilsecondodasinistra.proportion.core.domain.unit.UnitConverter
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.combine
 class ShoppingRepositoryImpl @Inject constructor(
     private val shoppingDao: ShoppingDao,
     private val ingredientDao: IngredientDao,
+    private val namer: BuiltInIngredientNamer,
     private val converter: UnitConverter,
 ) : ShoppingRepository {
 
@@ -23,7 +25,7 @@ class ShoppingRepositoryImpl @Inject constructor(
         combine(shoppingDao.observeItems(), ingredientDao.observeAll()) { items, ingredients ->
             val byId = ingredients.associateBy { it.id }
             items.mapNotNull { item ->
-                byId[item.ingredientId]?.let { item.toDomain(it.toDomain()) }
+                byId[item.ingredientId]?.let { item.toDomain(it.toDomain(namer)) }
             }
         }
 

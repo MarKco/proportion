@@ -57,7 +57,10 @@ object CookTestData {
     val ovenTag = Tag(id = "tag-oven", key = "oven", name = null, isBuiltIn = true)
 
     private fun ingredient(name: String, unit: MeasureUnit) =
-        Ingredient("ing-${name.lowercase()}", name, name.lowercase(), unit)
+        Ingredient(
+            id = "ing-${name.lowercase()}", key = null, name = name, normalisedName = name.lowercase(),
+            isBuiltIn = false, defaultUnit = unit,
+        )
 
     fun line(name: String, qty: Double?, unit: MeasureUnit, position: Int) = RecipeIngredient(
         id = "line-${name.lowercase()}",

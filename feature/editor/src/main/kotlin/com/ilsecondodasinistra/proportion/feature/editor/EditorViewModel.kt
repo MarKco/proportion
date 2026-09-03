@@ -108,10 +108,25 @@ class EditorViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Keeps whatever unit the line already had if it's still compatible with the picked
+     * ingredient (same [com.ilsecondodasinistra.proportion.core.model.UnitCategory]) — e.g. the
+     * user already chose kilograms and picks a gram-default ingredient, kilograms stay. Only an
+     * incompatible unit (or the untouched default) gets replaced by the ingredient's own default.
+     */
     fun onSuggestionPick(index: Int, ingredient: Ingredient) = edit { state ->
         state.copy(
             lines = state.lines.mapIndexed { i, line ->
-                if (i == index) line.copy(name = ingredient.name, unit = ingredient.defaultUnit) else line
+                if (i == index) {
+                    val unit = if (line.unit.category == ingredient.defaultUnit.category) {
+                        line.unit
+                    } else {
+                        ingredient.defaultUnit
+                    }
+                    line.copy(name = ingredient.name, unit = unit)
+                } else {
+                    line
+                }
             },
             suggestions = emptyList(),
             suggestionLineIndex = null,

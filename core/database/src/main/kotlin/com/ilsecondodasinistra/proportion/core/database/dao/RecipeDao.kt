@@ -28,6 +28,12 @@ abstract class RecipeDao {
      * **every** selected ingredient; within the tag filter it needs **any** of the selected tags,
      * because picking "first course" and "dessert" means either, not both at once.
      *
+     * [matchingBuiltInIds] exists because `ingredients.normalised_name` is frozen to a built-in
+     * row's raw English key (see `ProPortionDatabase`'s seeding) — this SQL-only `LIKE` can never
+     * match a built-in ingredient by its resolved, current-language name. The caller (which has
+     * access to the namer) resolves that match in Kotlin and passes the matching ids here; an
+     * empty list (the default, and always what's passed when [query] is blank) changes nothing.
+     *
      * Prefer the [observeFiltered] extension, which computes [ingredientCount] for you.
      */
     @Transaction
@@ -41,7 +47,8 @@ abstract class RecipeDao {
             OR EXISTS (
                 SELECT 1 FROM recipe_ingredients ri
                 JOIN ingredients i ON i.id = ri.ingredient_id
-                WHERE ri.recipe_id = r.id AND i.normalised_name LIKE '%' || :query || '%'
+                WHERE ri.recipe_id = r.id
+                  AND (i.normalised_name LIKE '%' || :query || '%' OR ri.ingredient_id IN (:matchingBuiltInIds))
             )
         )
         AND (
@@ -71,6 +78,7 @@ abstract class RecipeDao {
         ingredientIds: List<String>,
         ingredientCount: Int,
         sort: String,
+        matchingBuiltInIds: List<String> = emptyList(),
     ): Flow<List<RecipeWithRelations>>
 
     @Transaction

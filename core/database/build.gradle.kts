@@ -6,6 +6,12 @@ plugins {
 
 android {
     namespace = "com.ilsecondodasinistra.proportion.core.database"
+
+    sourceSets {
+        getByName("test") {
+            assets.srcDirs("$projectDir/schemas")
+        }
+    }
 }
 
 ksp {

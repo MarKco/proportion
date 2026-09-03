@@ -50,8 +50,10 @@ object TestData {
 
     fun ingredient(name: String, unit: MeasureUnit = MeasureUnit.GRAM) = Ingredient(
         id = "ing-${name.lowercase()}",
+        key = null,
         name = name,
         normalisedName = name.lowercase(),
+        isBuiltIn = false,
         defaultUnit = unit,
     )
 
@@ -164,8 +166,10 @@ class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : Ingred
 
         val created = Ingredient(
             id = "ing-$normalised",
+            key = null,
             name = name.trim(),
             normalisedName = normalised,
+            isBuiltIn = false,
             defaultUnit = defaultUnit,
         )
         stored.value = stored.value + created

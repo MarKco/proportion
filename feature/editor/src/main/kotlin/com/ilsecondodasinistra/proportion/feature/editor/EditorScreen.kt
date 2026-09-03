@@ -5,11 +5,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -35,14 +41,22 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,6 +64,20 @@ import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.ui.component.UnitPicker
 import com.ilsecondodasinistra.proportion.core.ui.tagLabel
 import com.ilsecondodasinistra.proportion.core.ui.unitLabel
+
+/**
+ * Extra room requested below a newly-added ingredient row's own (real, measured) height, so the
+ * suggestion list that appears once typing starts has space to show above the keyboard instead of
+ * being hidden under it. Sized for three full rows of suggestion chips plus their [FlowRow]
+ * padding, generously rounded up — `bringIntoView` scrolls only the minimum distance needed to
+ * reveal the requested rect, so asking for more than ends up needed just means the request
+ * under-uses the room it got, never that it overshoots. If the viewport above the keyboard can't
+ * fit the row plus all of this,
+ * [BringIntoViewRequester] aligns the row's own top edge towards the top of the visible area
+ * rather than scrolling it off-screen — so overestimating here only ever trims how much of the
+ * (not-yet-visible) suggestion area shows, never pushes the field itself out of view.
+ */
+private val NEW_LINE_SUGGESTIONS_CLEARANCE = 420.dp
 
 @Composable
 fun EditorRoute(
@@ -106,6 +134,15 @@ fun EditorScreen(
     val leave = { if (state.isDirty) showDiscardDialog = true else onBack() }
 
     BackHandler(enabled = state.isDirty) { showDiscardDialog = true }
+
+    // Detects a line appended by "Aggiungi ingrediente" (onAddLine always appends at the end) so
+    // that one row alone gets focused and scrolled up, leaving room below it for suggestions.
+    var previousLineCount by remember { mutableIntStateOf(state.lines.size) }
+    var newlyAddedIndex by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(state.lines.size) {
+        newlyAddedIndex = if (state.lines.size > previousLineCount) state.lines.lastIndex else null
+        previousLineCount = state.lines.size
+    }
 
     Scaffold(
         modifier = Modifier.testTag("editor_screen"),
@@ -179,6 +216,7 @@ fun EditorScreen(
                     index = index,
                     line = line,
                     suggestions = if (state.suggestionLineIndex == index) state.suggestions else emptyList(),
+                    requestFocusAndScroll = index == newlyAddedIndex,
                     onNameChange = onLineNameChange,
                     onSuggestionPick = onSuggestionPick,
                     onQuantityChange = onLineQuantityChange,
@@ -325,18 +363,79 @@ private fun TagSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun IngredientEditorRow(
     index: Int,
     line: EditorLine,
     suggestions: List<Ingredient>,
+    requestFocusAndScroll: Boolean,
     onNameChange: (Int, String) -> Unit,
     onSuggestionPick: (Int, Ingredient) -> Unit,
     onQuantityChange: (Int, String) -> Unit,
     onUnitChange: (Int, com.ilsecondodasinistra.proportion.core.model.MeasureUnit) -> Unit,
     onRemove: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().testTag("editor_line_$index")) {
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val focusRequester = remember { FocusRequester() }
+    val density = LocalDensity.current
+    var cardSize by remember { mutableStateOf<IntSize?>(null) }
+
+    LaunchedEffect(requestFocusAndScroll) {
+        if (requestFocusAndScroll) focusRequester.requestFocus()
+    }
+
+    // Deliberately NOT keyed on cardSize: the card keeps resizing as suggestions appear/change
+    // while typing, and re-running this on every one of those resizes was the actual cause of a
+    // scroll glitch on every keystroke. This runs exactly once per focus request instead - it
+    // polls cardSize (a plain state read, not a key) until a real measurement exists, which at
+    // this point is always the row's height *before* any suggestions have appeared, since focus
+    // is requested the instant the row is added, before the user has typed anything.
+    //
+    // Two more things it waits on: (1) isImeVisible flipping to true - requesting focus above only
+    // *starts* the keyboard's show animation; (2) that animation actually finishing - isImeVisible
+    // flips true as soon as it starts, but the inset height keeps changing for a couple hundred ms
+    // more, so scrolling immediately measures against a still-shrinking viewport and undershoots.
+    // Polling a live WindowInsets object (not a recomposition-tracked read) for a few stable frames
+    // catches the real end of the animation without hardcoding a guessed delay.
+    val imeVisible = WindowInsets.isImeVisible
+    val imeInsets = WindowInsets.ime
+    LaunchedEffect(requestFocusAndScroll, imeVisible) {
+        if (requestFocusAndScroll && imeVisible) {
+            var size = cardSize
+            var sizeWait = 0
+            while (size == null && sizeWait < 30) {
+                withFrameNanos {}
+                size = cardSize
+                sizeWait++
+            }
+            if (size == null) return@LaunchedEffect
+
+            var lastHeight = imeInsets.getBottom(density)
+            var stableFrames = 0
+            var frame = 0
+            while (stableFrames < 3 && frame < 30) {
+                withFrameNanos {}
+                val height = imeInsets.getBottom(density)
+                stableFrames = if (height == lastHeight) stableFrames + 1 else 0
+                lastHeight = height
+                frame++
+            }
+
+            val clearancePx = with(density) { NEW_LINE_SUGGESTIONS_CLEARANCE.toPx() }
+            bringIntoViewRequester.bringIntoView(
+                Rect(0f, 0f, size.width.toFloat(), size.height + clearancePx),
+            )
+        }
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("editor_line_$index")
+            .onSizeChanged { cardSize = it }
+            .bringIntoViewRequester(bringIntoViewRequester),
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
@@ -344,7 +443,8 @@ private fun IngredientEditorRow(
                     onValueChange = { onNameChange(index, it) },
                     label = { Text(stringResource(R.string.editor_ingredient_name)) },
                     singleLine = true,
-                    modifier = Modifier.weight(1f).testTag("editor_line_name_$index"),
+                    modifier = Modifier.weight(1f).testTag("editor_line_name_$index")
+                        .focusRequester(focusRequester),
                 )
                 IconButton(onClick = onRemove, modifier = Modifier.testTag("editor_line_remove_$index")) {
                     Icon(
