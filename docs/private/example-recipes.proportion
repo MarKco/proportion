@@ -11,14 +11,14 @@
                 "builtin:first_course"
             ],
             "ingredients": [
-                { "name": "Riso Carnaroli", "qty": 320, "unit": "GRAM" },
-                { "name": "Zafferano", "qty": 1, "unit": "SACHET" },
-                { "name": "Brodo vegetale", "qty": 1, "unit": "LITRE" },
-                { "name": "Cipolla", "qty": 0.5, "unit": "PIECE" },
-                { "name": "Burro", "qty": 40, "unit": "GRAM" },
-                { "name": "Parmigiano grattugiato", "qty": 60, "unit": "GRAM" },
-                { "name": "Vino bianco", "qty": 100, "unit": "MILLILITRE" },
-                { "name": "Sale", "qty": null, "unit": "TO_TASTE", "display": "q.b." }
+                { "name": "builtin:carnaroli_rice", "qty": 320, "unit": "GRAM" },
+                { "name": "builtin:saffron", "qty": 1, "unit": "SACHET" },
+                { "name": "builtin:vegetable_stock", "qty": 1, "unit": "LITRE" },
+                { "name": "builtin:onion", "qty": 0.5, "unit": "PIECE" },
+                { "name": "builtin:butter", "qty": 40, "unit": "GRAM" },
+                { "name": "builtin:parmesan", "qty": 60, "unit": "GRAM", "note": "grattugiato" },
+                { "name": "builtin:white_wine", "qty": 100, "unit": "MILLILITRE" },
+                { "name": "builtin:salt", "qty": null, "unit": "TO_TASTE", "display": "q.b." }
             ],
             "steps": [
                 "Tritare la cipolla e farla appassire nel burro a fuoco basso.",
@@ -44,13 +44,13 @@
                 "Autunno"
             ],
             "ingredients": [
-                { "name": "Farina 00", "qty": 350, "unit": "GRAM" },
-                { "name": "Zucchero", "qty": 200, "unit": "GRAM" },
-                { "name": "Burro", "qty": 100, "unit": "GRAM" },
-                { "name": "Uova", "qty": 3, "unit": "EGG" },
-                { "name": "Mele", "qty": 4, "unit": "PIECE" },
-                { "name": "Lievito per dolci", "qty": 1, "unit": "SACHET" },
-                { "name": "Sale", "qty": null, "unit": "TO_TASTE", "display": "un pizzico" }
+                { "name": "builtin:flour_00", "qty": 350, "unit": "GRAM" },
+                { "name": "builtin:sugar", "qty": 200, "unit": "GRAM" },
+                { "name": "builtin:butter", "qty": 100, "unit": "GRAM" },
+                { "name": "builtin:egg", "qty": 3, "unit": "EGG" },
+                { "name": "builtin:apple", "qty": 4, "unit": "PIECE" },
+                { "name": "builtin:sweet_baking_powder", "qty": 1, "unit": "SACHET" },
+                { "name": "builtin:salt", "qty": null, "unit": "TO_TASTE", "display": "un pizzico" }
             ],
             "steps": [
                 "Sbattere le uova con lo zucchero fino a ottenere un composto chiaro e spumoso.",
@@ -72,9 +72,9 @@
                 "builtin:preserves"
             ],
             "ingredients": [
-                { "name": "Fragole", "qty": 1, "unit": "KILOGRAM" },
-                { "name": "Zucchero", "qty": 700, "unit": "GRAM" },
-                { "name": "Succo di limone", "qty": 2, "unit": "TABLESPOON" }
+                { "name": "builtin:strawberry", "qty": 1, "unit": "KILOGRAM" },
+                { "name": "builtin:sugar", "qty": 700, "unit": "GRAM" },
+                { "name": "builtin:lemon_juice", "qty": 2, "unit": "TABLESPOON" }
             ],
             "steps": [
                 "Lavare, mondare e tagliare a pezzi le fragole.",
