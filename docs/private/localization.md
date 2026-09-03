@@ -34,24 +34,30 @@ user-created tag — has no resource to resolve and falls through to `tag.name`,
 user typed: user tags are never translated, by construction, because there's no key to look one up
 by.
 
-## Per-app language selection: spec vs. what's actually wired
+## Per-app language selection
 
-The design spec (`specs/2026-09-01-proportion-v1-design.md`, §10) calls for per-app language
-selection via the manifest's `localeConfig` *and* `AppCompatDelegate.setApplicationLocales`. Only the
-first half is actually implemented: `app/src/main/AndroidManifest.xml` declares
-`android:localeConfig="@xml/locales_config"`, and `app/src/main/res/xml/locales_config.xml` lists
-`en` and `it`. That's enough for Android 13+ (API 33), where the OS itself reads `locales_config.xml`
-and exposes a per-app language picker in system Settings — no in-app code is required for that path,
-and there's no code in `feature/settings` (`SettingsViewModel.kt` / `SettingsScreen.kt`) that touches
-locales at all; that screen only handles theme mode, dynamic colour, and backup/restore.
+Settings has a language picker (System / Italiano / English) backed by `LocaleController`
+(`core/domain/.../LocaleController.kt`, `currentTag()`/`setTag(tag)`) and
+`SettingsViewModel.onLanguageChange`, implemented by `AppCompatLocaleController`
+(`core/ui/.../AppCompatLocaleController.kt`). It uses two mechanisms together, because
+`AppCompatDelegate.setApplicationLocales` alone does not take effect in the *running* process here
+— its live-apply hooks target `AppCompatActivity`, and this app's Compose-only theme deliberately
+isn't one (confirmed by a real crash during development: "You need to use a Theme.AppCompat theme
+(or descendant) with this activity" — making `MainActivity` one just for this would need a
+`Theme.AppCompat` parent for no other benefit):
 
-`minSdk` is 26 (`build-logic/convention/src/main/kotlin/ProportionVersions.kt`), so on API 26–32 there
-is currently **no** way for a user to override the app's language independently of the system
-language — the `AppCompatDelegate.setApplicationLocales` half of the spec, which would need an
-in-app picker calling it, has not been built. This is a gap between the spec and the code, not a
-documentation error: if a pre-33 language switch is ever wanted, it needs a settings row plus a call
-to `AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(...))`, which today does
-not exist anywhere in the codebase.
+- **API 33+**: `android.app.LocaleManager` is called directly — the same mechanism the device's own
+  Settings > Apps > <App> > Language screen uses — proven on-device to update the running app
+  immediately once the activity recreates.
+- **Every API level**: `AppCompatDelegate.setApplicationLocales` is called too, purely so the choice
+  persists (via its own `AppLocalesMetadataHolderService` storage) and is reapplied automatically on
+  the next cold start. Below API 33 that persistence is the only effect: the language changes from
+  the next app open, not immediately, since no platform API exists to apply it live pre-33.
+
+The manifest's `android:localeConfig="@xml/locales_config"` (`app/src/main/res/xml/locales_config.xml`,
+listing `en`/`it`) is what additionally exposes ProPortion in the *system* Settings > Apps > Language
+screen on Android 13+ — a second, OS-level entry point onto the same underlying mechanism, not a
+separate feature.
 
 ## Adding a third language
 

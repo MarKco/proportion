@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Folder sync (phase 10): shares recipes, and the literal (non built-in) ingredient/tag
  * catalogue, with another device through a folder something like Syncthing keeps in sync —
- * never a raw copy of the database. See `docs/private/specs/2026-09-03-syncthing-folder-sync-design.md`.
+ * never a raw copy of the database. See `docs/private/HISTORY.md`, phase 10.
  *
  * No-op (never throws) whenever sync is disabled or no folder has been chosen — a caller does not
  * need to check [com.ilsecondodasinistra.proportion.core.model.UserPreferences.syncEnabled] first.

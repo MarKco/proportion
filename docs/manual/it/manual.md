@@ -8,10 +8,8 @@ avviso quando stai cuocendo al forno una teglia molto più grande o più piccola
 Questo manuale segue **una sola ricetta d'esempio, dall'inserimento alla cottura**, cosicché ogni
 passaggio si vede applicato allo stesso caso concreto invece che a un esempio diverso ogni volta.
 
-> **Nota sulle immagini.** Le schermate di questa versione del manuale sono ancora segnaposto: il
-> design visivo dell'app è in fase di revisione e le schermate reali verranno catturate su
-> dispositivo fisico solo dopo che la revisione sarà conclusa, per evitare di doverle rifare.
-> Ogni segnaposto descrive esattamente cosa dovrà mostrare la schermata definitiva.
+> **Nota sulle immagini.** Tutte le schermate qui sotto sono reali, catturate su dispositivo
+> fisico (Fairphone 3) con l'app impostata in italiano.
 
 ## La ricetta d'esempio: Torta di mele
 
@@ -43,10 +41,10 @@ Useremo questa ricetta in tutti e dieci i passaggi che seguono.
 Alla primissima apertura, prima di aver aggiunto qualunque ricetta, la scheda **Home** è vuota e
 invita ad aggiungere la prima ricetta.
 
-> **[screenshot: la schermata Home vuota, prima di qualsiasi ricetta — titolo "Home" nella barra
-> superiore, l'illustrazione/testo dello stato vuoto con il titolo "Nessuna ricetta da mostrare",
-> il corpo "Aggiungi la tua prima ricetta: comparirà qui, pronta da riproporzionare." e il pulsante
-> "Aggiungi una ricetta"]**
+![Il Ricettario, con ricette esistenti e il pulsante + per aggiungerne una nuova](screenshots/00-recipes-entry.png)
+
+*(Con una libreria davvero vuota questa schermata mostra un'illustrazione e il pulsante "Aggiungi
+una ricetta" al posto dell'elenco — stesso punto d'ingresso, nessuna ricetta ancora da aprire.)*
 
 1. Apri la scheda **Ricettario** dalla barra di navigazione in basso e tocca il pulsante **+**
    (FAB) in basso a destra — oppure tocca **"Aggiungi una ricetta"** dallo stato vuoto della Home
@@ -72,11 +70,9 @@ invita ad aggiungere la prima ricetta.
    conferma con il dialogo **"Scartare le modifiche?"** ("Le modifiche fatte andranno perse."),
    con le opzioni **"Scarta"** e **"Continua a modificare"**.
 
-> **[screenshot: la schermata dell'editor ("Nuova ricetta") a metà compilazione — titolo "Torta di
-> mele" nel campo nome, "Persone" impostato a 6, i chip tag "Dolce" e "Al forno" selezionati più il
-> tag libero "Autunno" appena creato, almeno le prime tre righe ingrediente compilate (Farina 00
-> 350 g, Zucchero 200 g, Burro 100 g) con il selettore unità visibile su una riga, e la sezione
-> Procedimento con i quattro passi already scritti sotto]**
+![L'editor compilato per intero: tutti e sette gli ingredienti e i quattro passi](screenshots/02-editor-filled.png)
+
+![La ricetta salvata, vista dal dettaglio](screenshots/01-detail-clean.png)
 
 ---
 
@@ -98,13 +94,10 @@ Con più ricette in libreria, il Ricettario si trova e si filtra così.
    (predefinito), **"Dalla A alla Z"** e **"Più cucinate"**.
 5. Tocca la scheda della ricetta per aprirne il dettaglio.
 
-> **[screenshot: la schermata Ricettario con "mele" scritto nel campo di ricerca, il chip "Dolce"
-> selezionato, il conteggio risultati che mostra "1 ricetta", e la scheda "Torta di mele" visibile
-> nell'elenco sotto con i suoi tag]**
+![Il Ricettario con "mele" nel campo di ricerca e il chip Dolce selezionato](screenshots/03-search-filter.png)
 
-> **[screenshot: il foglio a comparsa "Filtra per ingrediente" aperto sopra il Ricettario, con
-> l'elenco degli ingredienti del catalogo e la casella di "Farina 00" spuntata, più il pulsante
-> "Azzera i filtri" in basso nel foglio]**
+*(Il foglio "Filtra per ingrediente" non è illustrato in questo giro — la descrizione sopra resta
+accurata.)*
 
 ---
 
@@ -136,17 +129,7 @@ sempre visibili tutte e quattro, qualunque sia la modalità attiva.
    procedimento resta identico, parola per parola. Da qui **"Torna a regolare"** riporta alla
    schermata precedente.
 
-> **[screenshot: la schermata di scalatura in modalità "Persone" impostata a 9, con la didascalia
-> "da 6 · fattore 1,5" visibile, l'elenco ingredienti ricalcolato (Farina 00 525 g, Zucchero 300 g,
-> Burro 150 g, Mele 6 pezzi), il badge d'avviso ambra sulla riga Uova con testo "4,5 non è una
-> quantità pratica" e i due chip "Arrotonda a 4 uova" / "Arrotonda a 5 uova" espansi e stabili
-> (non a metà animazione), e sotto l'avviso forno "La cottura non si scala in proporzione" con il
-> testo sul diametro della teglia]**
-
-> **[screenshot: la "scheda scalata" della Torta di mele dopo aver toccato "Vedi la scheda" — 
-> intestazione "Per 9 persone", i tag della ricetta, l'elenco ingredienti con le nuove quantità,
-> il procedimento invariato in quattro passi numerati, e in basso i pulsanti "Torna a regolare",
-> "Salva questa scalatura" e "Inizia a cucinare"]**
+![La schermata di scalatura in modalità Persone a 9, con l'avviso forno e i chip di arrotondamento uova](screenshots/04-scale-servings.png)
 
 *(La modalità **Fattore**, visibile come terzo chip nella riga sopra, permette di inserire
 direttamente un moltiplicatore con tre preset rapidi ×0,5, ×2, ×3, invece di ragionare in persone
@@ -176,11 +159,9 @@ A volte il vincolo non è il numero di persone ma quanto hai già misurato di un
    modalità di scalatura usata, solo dal fattore risultante: qualunque strada porti a un fattore
    fuori fascia lo fa comparire.
 
-> **[screenshot: la schermata di scalatura in modalità "Ingrediente" con il chip "Uova" selezionato
-> e il campo "Ho" contenente "2", la didascalia "da 6 · fattore 0,67" visibile, l'elenco
-> ingredienti ricalcolato con almeno le righe Farina 00 (235 g), Burro (67 g) e Uova (2, senza
-> avviso perché è il vincolo), la riga Mele con il badge d'avviso e i due chip di arrotondamento
-> espansi, e l'avviso forno con il testo sul diametro ridotto della teglia]**
+![Modalità Ingrediente: chip Uova selezionato, campo "Ho" a 2, avviso forno "circa 0,82 volte"](screenshots/05-scale-ingredient.png)
+
+![L'elenco ricalcolato: Mele con badge d'avviso e chip di arrotondamento, Lievito clampato a 1 bustina](screenshots/06-scale-ingredient-list.png)
 
 ---
 
@@ -212,10 +193,9 @@ persone posso farla?"
    1 bustina"**) e l'avviso forno, sullo stesso principio delle sezioni precedenti (qui il
    rapporto è "circa 0,77 volte").
 
-> **[screenshot: la schermata di scalatura in modalità "Dispensa" con il campo "Ho" della riga
-> Burro contenente "60" e quello della riga Farina 00 contenente "300", l'etichetta "Collo di
-> bottiglia" visibile sotto la riga Burro, il testo "Puoi farne per circa 3,6 persone" in evidenza,
-> e in fondo la riga "Avanzano: Farina 00 90 g"]**
+![Modalità Dispensa: Burro "Ho" 60, Farina 00 "Ho" 300, "Puoi farne per circa 3,6 persone"](screenshots/07-scale-pantry.png)
+
+![L'elenco ricalcolato con l'etichetta "Collo di bottiglia" sotto Burro](screenshots/08-scale-pantry-bottleneck.png)
 
 ---
 
@@ -239,13 +219,9 @@ Una scalatura calcolata al volo si può salvare per riaprirla in futuro senza ri
    fascia in cima — finché non tocchi esplicitamente "Visualizza l'originale" o un'altra
    scalatura.
 
-> **[screenshot: il dialogo "Salva questa scalatura" aperto sopra la schermata di scalatura, con
-> il campo "Nome" contenente "Per 9 persone", la casella "Mostra questa scalatura per impostazione
-> predefinita aprendo la ricetta" spuntata, e i pulsanti "Salva" e "Annulla"]**
+![Il dialogo "Salva questa scalatura", nome precompilato, "predefinita" spuntata](screenshots/09-save-scaling-dialog.png)
 
-> **[screenshot: il dettaglio della ricetta "Torta di mele" che mostra la scalatura salvata — la
-> fascia in cima "Stai vedendo: Per 9 persone · Visualizza l'originale", e più sotto la sezione
-> "Scalature salvate" con la scheda "Per 9 persone"]**
+![Il dettaglio ricetta con la fascia "Stai vedendo: Per 9 persone · Visualizza l'originale"](screenshots/10-detail-default-scaling.png)
 
 ---
 
@@ -269,13 +245,9 @@ passi mentre cucini, con le quantità sempre a portata di tocco.
 5. La X in alto a sinistra chiude la modalità cucina e torna al dettaglio della ricetta. Lo
    schermo torna a poter spegnersi da solo.
 
-> **[screenshot: la modalità cucina della Torta di mele con il progresso "1 / 4" in alto a destra,
-> almeno il primo passo mostrato barrato/completato e i successivi non completati in testo grande,
-> e il pulsante "Ingredienti" con icona a libro in basso a destra]**
+![Modalità cucina con progresso "1 / 4", il primo passo barrato](screenshots/11-cooking-mode.png)
 
-> **[screenshot: il foglio a comparsa "Ingredienti" aperto sopra la modalità cucina, con la
-> didascalia "Per 9 persone" e l'elenco di tutti gli ingredienti scalati (Farina 00, Zucchero,
-> Burro, Uova, Mele, Lievito per dolci, Sale) con le rispettive quantità]**
+![Il foglio Ingredienti aperto sopra la modalità cucina, "Per 9 persone"](screenshots/12-cooking-ingredients-sheet.png)
 
 ---
 
@@ -302,17 +274,12 @@ Dal dettaglio della ricetta, il menu con i tre puntini in alto a destra ("Altre 
    numero di ricette contenute nel file e quante sono già presenti nella tua libreria, con la
    scelta fra **"Unisci"** e **"Sostituisci tutto"**.
 
-> **[screenshot: il dettaglio della Torta di mele con il menu "Altre azioni" aperto, che mostra le
-> quattro voci "Modifica", "Condividi come testo", "Condividi file .proportion", "Elimina"]**
+![Il menu "Altre azioni": Condividi come testo, Condividi file .proportion, Elimina](screenshots/13-more-actions-menu.png)
 
-> **[screenshot: il selettore di condivisione di Android ("Condividi ricetta") aperto sopra il
-> dettaglio della ricetta, con la lista delle app disponibili e, se il selettore lo consente in
-> anteprima, il testo formattato della ricetta con titolo, ingredienti allineati e procedimento
-> numerato]**
+![Il selettore di condivisione di Android, aperto da "Condividi come testo"](screenshots/14-share-sheet.png)
 
-> **[screenshot: la schermata Impostazioni aperta automaticamente dopo aver toccato un allegato
-> .proportion ricevuto, con il dialogo "Ripristino" in primo piano che mostra il conteggio (es.
-> "1 ricette nel file, 0 già presenti.") e i pulsanti "Unisci" e "Sostituisci tutto"]**
+*(La schermata di ricezione di un file .proportion non è illustrata — riusa lo stesso dialogo di
+Ripristino mostrato nella sezione 9 qui sotto.)*
 
 ---
 
@@ -340,17 +307,10 @@ dell'intera libreria (tutte le ricette, i tag, il catalogo ingredienti e le vari
    "Questo non è un file ProPortion.", "Questo file è stato scritto da una versione più recente
    dell'app (N)." o "Non riesco a leggere questo file."
 
-> **[screenshot: la schermata Impostazioni per intero, dalla sezione "Aspetto" (tema, colori dallo
-> sfondo e — a quella disattivata — la scelta del tema dell'app: Pastello, Vivace, Allegra, Alto
-> contrasto) fino alla sezione "Le tue ricette" con le voci "Salva tutte le ricette" e "Ripristina
-> da un backup" visibili, e la sezione "Informazioni" in fondo con autore e versione]**
+![Impostazioni: Aspetto, tema, e la sezione Lingua](screenshots/15-settings-top.png)
 
-> **[screenshot: il dialogo "Ripristino" aperto sopra Impostazioni dopo aver scelto un file di
-> backup, con un conteggio tipo "42 ricette nel file, 12 già presenti." e i due pulsanti "Unisci"
-> e "Sostituisci tutto"]**
-
-> **[screenshot: il dialogo di esito finale del ripristino, con un testo tipo "30 ricette
-> aggiunte, 12 saltate" e il pulsante "OK"]**
+*(Il dialogo di Ripristino e quello di esito finale non sono illustrati in questo giro — servirebbe
+un vero file di backup sul device da cui scegliere.)*
 
 ---
 
@@ -383,12 +343,6 @@ Con qualche ricetta in libreria — includendo la Torta di mele cucinata almeno 
    tutto"**, che prima di procedere chiede conferma con il dialogo **"Svuotare tutta la lista?"**
    ("Ogni articolo, preso o no, verrà rimosso.").
 
-> **[screenshot: la dashboard Home con una piccola libreria di ricette (incluse almeno la Torta di
-> mele), che mostra le quattro schede animate: "La tua libreria" con il donut e la legenda,
-> "Continua a cucinare" con la Torta di mele e "Salvata come Per 9 persone", "Più cucinate" /
-> "Preferite" a due colonne, e "Cosa cucino?" con i chip portata e una ricetta suggerita]**
+![La dashboard Home: donut della libreria, "Continua a cucinare" con la Torta di mele, "Più cucinate"](screenshots/16-home-dashboard.png)
 
-> **[screenshot: la schermata Spesa con alcuni articoli aggiunti dalla Torta di mele (es. Farina
-> 00, Zucchero, Burro, Uova, Mele, Lievito per dolci), almeno un articolo spuntato e barrato,
-> almeno una riga con la nota "Da 2 ricette", e il menu "Altre azioni" aperto con le voci
-> "Condividi", "Rimuovi già presi" e "Svuota tutto"]**
+![La lista della spesa con articoli dalla ricetta, alcuni spuntati e barrati, righe "Da 2 ricette"](screenshots/17-shopping-list.png)

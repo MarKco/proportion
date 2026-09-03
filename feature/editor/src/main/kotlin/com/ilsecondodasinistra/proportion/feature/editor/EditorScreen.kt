@@ -53,6 +53,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
@@ -683,7 +688,19 @@ private fun StepEditorRow(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { onNext() }),
             modifier = Modifier.weight(1f).testTag("editor_step_$index")
-                .focusRequester(focusRequester),
+                .focusRequester(focusRequester)
+                // A multiline field's IME shows a plain return key, not the "Next" action, on most
+                // keyboards - imeAction/KeyboardActions above never fires from it. Enter still
+                // reaches the app as a real key event, so intercept it here to skip the newline it
+                // would otherwise insert and to catch hardware keyboards too.
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                        onNext()
+                        true
+                    } else {
+                        false
+                    }
+                },
         )
         IconButton(onClick = onRemoveStep) {
             Icon(

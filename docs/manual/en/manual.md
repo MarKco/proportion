@@ -8,11 +8,9 @@ a notice when you are baking in a tin much larger or smaller than usual.
 This manual follows **a single worked example recipe, from entry through to cooking**, so every
 step is shown applied to the same concrete case rather than a different example each time.
 
-> **A note on the pictures.** The screenshots in this version of the manual are still
-> placeholders: the app's visual design is under review, and the real screenshots will be
-> captured on a physical device — with its language set to English, to match this manual — only
-> after that review is finished, to avoid redoing them. Each placeholder describes exactly what
-> the final screenshot must show.
+> **A note on the pictures.** All screenshots below are real, captured on a physical device
+> (Fairphone 3) with the app set to English. A couple of steps in sections 4 and 5 are not yet
+> illustrated with a screenshot — the described behaviour is accurate, just not pictured here.
 
 ## The worked example: Apple cake
 
@@ -44,9 +42,10 @@ We will use this recipe throughout all ten steps below.
 The very first time you open the app, before any recipe has been added, the **Home** tab is
 empty and invites you to add your first recipe.
 
-> **[screenshot: the empty Home screen, before any recipe exists — "Home" title in the top bar,
-> the empty-state illustration/text with the title "No recipes to show yet", the body "Add your
-> first recipe and it will show up here, ready to scale." and the "Add a recipe" button]**
+![The Recipes tab, with existing recipes and the + button to add a new one](screenshots/01-recipes-empty-entry.png)
+
+*(On a genuinely empty library, this screen shows an illustration and an "Add a recipe" button
+instead of a list — same entry point, no recipe to tap through to yet.)*
 
 1. Open the **Recipes** tab from the bottom navigation bar and tap the **+** button (FAB) in the
    bottom right — or tap **"Add a recipe"** from the empty state on Home or on Recipes. The
@@ -72,11 +71,7 @@ empty and invites you to add your first recipe.
    with the **"Discard changes?"** dialog ("The changes you made will be lost."), with the
    options **"Discard"** and **"Keep editing"**.
 
-> **[screenshot: the editor screen ("New recipe") half filled in — "Apple cake" in the name
-> field, "Servings" set to 6, the "Dessert" and "Oven" tag chips selected plus the freshly
-> created free tag "Autumn", at least the first three ingredient rows filled in (Flour 350 g,
-> Sugar 200 g, Butter 100 g) with the unit picker visible on one row, and the Method section with
-> the four steps already written below it]**
+![The editor fully filled in: all seven ingredients and the four method steps](screenshots/02-editor-filled.png)
 
 ---
 
@@ -98,13 +93,10 @@ With more than one recipe in the library, the Recipes tab is found and filtered 
    **"A to Z"** and **"Most cooked"**.
 5. Tap the recipe's card to open its detail screen.
 
-> **[screenshot: the Recipes screen with "apple" typed into the search field, the "Dessert" chip
-> selected, the result count showing "1 recipe", and the "Apple cake" card visible in the list
-> below with its tags]**
+![The Recipes screen with "apple" in the search field and the Dessert chip selected](screenshots/03-search-filter.png)
 
-> **[screenshot: the "Filter by ingredient" bottom sheet open over the Recipes screen, with the
-> list of catalogue ingredients and the "Flour" checkbox ticked, plus the "Clear filters" button
-> at the bottom of the sheet]**
+*(The "Filter by ingredient" sheet is not pictured in this pass — the description above is
+accurate.)*
 
 ---
 
@@ -135,16 +127,9 @@ whichever mode is active.
    screen, but with the new quantities and the same heading **"For 9 servings"**; the method is
    identical, word for word. From there, **"Adjust again"** goes back to the previous screen.
 
-> **[screenshot: the scale screen in "Servings" mode set to 9, with the caption "from 6 · factor
-> 1.5" visible, the recalculated ingredient list (Flour 525 g, Sugar 300 g, Butter 150 g, Apples
-> 6 pieces), the amber warning badge on the Eggs row reading "4.5 is not a practical amount" with
-> the two chips "Round to 4 eggs" / "Round to 5 eggs" expanded and settled (not mid-animation),
-> and below it the oven warning "Baking does not scale in proportion" with the tin-diameter text]**
+![The scale screen in Servings mode set to 9, with the oven warning and the eggs rounding chips](screenshots/04-scale-servings.png)
 
-> **[screenshot: the "scaled card" for Apple cake after tapping "View the card" — heading "For 9
-> servings", the recipe's tags, the ingredient list with the new quantities, the unchanged method
-> in four numbered steps, and at the bottom the "Adjust again", "Save this scaling" and "Start
-> cooking" buttons]**
+![The scaled card after tapping "View the card" — heading "For 9 servings", full ingredient list and method](screenshots/05-scaled-card.png)
 
 *(**Factor** mode, visible as the third chip in the row above, lets you enter a straight
 multiplier directly, with three quick presets ×0.5, ×2, ×3, instead of thinking in servings or
@@ -174,11 +159,8 @@ already measured.
    which scaling mode was used, only on the resulting factor: whichever route gets you to a
    factor outside the band makes it appear.
 
-> **[screenshot: the scale screen in "Ingredient" mode with the "Eggs" chip selected and the
-> "I have" field containing "2", the caption "from 6 · factor 0.67" visible, the recalculated
-> ingredient list with at least the Flour (235 g), Butter (67 g) and Eggs (2, no warning since it
-> is the constraint) rows, the Apples row with the warning badge and the two rounding chips
-> expanded, and the oven notice with the text about the smaller tin diameter]**
+*(Not pictured in this pass — the equivalent screen in Italian is in `docs/manual/it/manual.md`,
+section 4. The behaviour is identical, only the labels differ.)*
 
 ---
 
@@ -209,10 +191,8 @@ servings can I make?"
    **"Round to 1 sachet"**), along with the oven notice, on the same principle as the previous
    sections (here the ratio is "about 0.77 times").
 
-> **[screenshot: the scale screen in "Pantry" mode with the "I have" field of the Butter row
-> containing "60" and the one for Flour containing "300", the "Bottleneck" label visible under
-> the Butter row, the text "You can make about 3.6 servings" prominent, and at the bottom the
-> line "Left over: Flour 90 g"]**
+*(Not pictured in this pass — see `docs/manual/it/manual.md`, section 5, for the equivalent
+screen.)*
 
 ---
 
@@ -235,13 +215,9 @@ A scaling computed on the fly can be saved to reopen later without recomputing i
    the detail screen opens already showing the 9-servings quantities, with the same banner at the
    top — until you explicitly tap "View original" or another scaling.
 
-> **[screenshot: the "Save this scaling" dialog open over the scale screen, with the "Name" field
-> containing "For 9 servings", the "Show this scaling by default when opening the recipe"
-> checkbox ticked, and the "Save" and "Cancel" buttons]**
+![The "Save this scaling" dialog, name pre-filled, "set as default" ticked](screenshots/06-save-scaling-dialog.png)
 
-> **[screenshot: the "Apple cake" recipe detail screen showing the saved scaling — the banner at
-> the top "Showing: For 9 servings · View original", and further down the "Saved scalings"
-> section with the "For 9 servings" card]**
+![The recipe detail screen showing the saved scaling — banner "Showing: For 9 servings · View original"](screenshots/07-detail-default-scaling.png)
 
 ---
 
@@ -265,13 +241,9 @@ you cook, with the quantities always one tap away.
 5. The X in the top left closes cooking mode and returns to the recipe's detail screen. The
    screen is free to turn off on its own again.
 
-> **[screenshot: cooking mode for Apple cake with the progress "1 / 4" in the top right, at
-> least the first step shown struck through/completed and the following ones not yet done, all
-> in large text, and the "Ingredients" button with a book icon in the bottom right]**
+![Cooking mode with progress "1 / 4", the first step checked off](screenshots/08-cooking-mode.png)
 
-> **[screenshot: the "Ingredients" bottom sheet open over cooking mode, with the caption "For 9
-> servings" and the list of every scaled ingredient (Flour, Sugar, Butter, Eggs, Apples, Baking
-> powder, Salt) with its quantity]**
+![The Ingredients bottom sheet open over cooking mode, "For 9 servings"](screenshots/09-cooking-ingredients-sheet.png)
 
 ---
 
@@ -297,16 +269,12 @@ From the recipe's detail screen, the three-dot menu in the top right ("More acti
    many recipes the file contains and how many are already in your library, with a choice
    between **"Merge"** and **"Replace everything"**.
 
-> **[screenshot: the Apple cake detail screen with the "More actions" menu open, showing the four
-> items "Edit", "Share as text", "Share as a .proportion file", "Delete"]**
+![The "More actions" menu: Share as text, Share as a .proportion file, Delete](screenshots/10-more-actions-menu.png)
 
-> **[screenshot: Android's own share sheet ("Share recipe") open over the recipe detail screen,
-> with the list of available apps and, if the sheet offers a preview, the formatted recipe text
-> with title, aligned ingredients and numbered method]**
+![Android's own share sheet, opened from "Share as text"](screenshots/11-share-sheet.png)
 
-> **[screenshot: the Settings screen opened automatically after tapping a received .proportion
-> attachment, with the "Restore" dialog in front showing the count (e.g. "1 recipes in this
-> file, 0 already here.") and the "Merge" and "Replace everything" buttons]**
+*(The "received .proportion file" screen is not pictured — it reuses the same Restore dialog
+shown in section 9 below.)*
 
 ---
 
@@ -332,17 +300,12 @@ entire library (every recipe, tags, the ingredient catalogue and saved scalings)
    ProPortion file.", "This file was written by a newer version of the app (N)." or "This file
    could not be read."
 
-> **[screenshot: the full Settings screen, from the "Appearance" section (theme, colours from the
-> wallpaper, and — with that off — the app theme picker: Pastel, Vivid, Playful, High contrast)
-> down to the "Your recipes" section with the "Back up all recipes" and "Restore from a backup"
-> items visible, and the "About" section at the bottom with author and version]**
+![Settings: Appearance, theme picker, and the language section](screenshots/12-settings-top.png)
 
-> **[screenshot: the "Restore" dialog open over Settings after picking a backup file, with a
-> count like "42 recipes in this file, 12 already here." and the two buttons "Merge" and
-> "Replace everything"]**
+![Settings: sync, "Your recipes" backup/restore, and the About section](screenshots/13-settings-sync-about.png)
 
-> **[screenshot: the final restore outcome dialog, with text like "30 recipes added, 12 skipped"
-> and the "OK" button]**
+*(The Restore dialog and the final outcome dialog are not pictured in this pass — the file picker
+step needs a real backup file on the device to select.)*
 
 ---
 
@@ -375,12 +338,6 @@ shows four animated cards on entry.
    for confirmation first with the **"Clear the whole list?"** dialog ("Every item, checked or
    not, will be removed.").
 
-> **[screenshot: the Home dashboard with a small recipe library (including at least Apple cake),
-> showing the four animated cards: "Your library" with the donut and legend, "Continue cooking"
-> with Apple cake and "Saved as For 9 servings", "Most cooked" / "Favourites" in two columns, and
-> "What shall I cook?" with the course chips and a suggested recipe]**
+![The Home dashboard: library donut, "Continue cooking" with Apple cake, "Most cooked"](screenshots/14-home-dashboard.png)
 
-> **[screenshot: the Shopping screen with some items added from Apple cake (e.g. Flour, Sugar,
-> Butter, Eggs, Apples, Baking powder), at least one item checked and struck through, at least
-> one row with the "From 2 recipes" note, and the "More actions" menu open showing "Share",
-> "Clear checked" and "Clear all"]**
+![The Shopping screen with items from the recipe, one checked off](screenshots/15-shopping-list.png)

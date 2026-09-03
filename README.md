@@ -20,7 +20,7 @@ that "salt to taste" does not scale, and that a cake baked at 1.5x does not bake
 Phases 1 to 7 are done. The app builds, installs, and does the whole job: enter a recipe, find it,
 rescale it four different ways, share it, back it up and restore it, see a dashboard, keep a
 shopping list, follow a recipe in cooking mode.
-Current progress lives in [`docs/private/IMPLEMENTATION-STATUS.md`](docs/private/IMPLEMENTATION-STATUS.md).
+Current progress lives in [`docs/private/STATUS.md`](docs/private/STATUS.md).
 
 ## Building
 
@@ -52,13 +52,11 @@ Requirements: JDK 21 and the Android SDK with platform 36.
 - [`docs/public`](docs/public) — what the app is and does (Italian and English)
 - [`docs/manual`](docs/manual) — user manual (Italian and English)
 - [`docs/private`](docs/private) — for developers, English only:
-  [architecture](docs/private/architecture.md) ·
-  [module map](docs/private/module-map.md) ·
-  [data model](docs/private/data-model.md) ·
-  [scaling engine](docs/private/scaling-engine.md) ·
-  [.proportion format](docs/private/proportion-format.md) ·
-  [contributing](docs/private/contributing.md) ·
-  [decisions](docs/private/adr)
+  [status](docs/private/STATUS.md) ·
+  [architecture](docs/private/ARCHITECTURE.md) ·
+  [history](docs/private/HISTORY.md) ·
+  [decisions](docs/private/DECISIONS.md) ·
+  [contributing](docs/private/contributing.md)
 
 ## Licence
 
