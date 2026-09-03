@@ -3,6 +3,7 @@ package com.ilsecondodasinistra.proportion.feature.editor
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -25,12 +26,14 @@ class EditorViewModelTest {
     )
     private val tags = FakeTagRepository(listOf(EditorTestData.dessertTag, EditorTestData.ovenTag))
 
-    private fun viewModel(recipeId: String? = null) = EditorViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("recipeId" to recipeId)),
-        recipeRepository = recipes,
-        ingredientRepository = ingredients,
-        tagRepository = tags,
-    )
+    private fun viewModel(recipeId: String? = null, ingredients: FakeIngredientRepository = this.ingredients) =
+        EditorViewModel(
+            savedStateHandle = SavedStateHandle(mapOf("recipeId" to recipeId)),
+            recipeRepository = recipes,
+            ingredientRepository = ingredients,
+            tagRepository = tags,
+            converter = DefaultUnitConverter(),
+        )
 
     @Test
     fun `a new draft starts with one empty ingredient line`() = runTest {
@@ -349,5 +352,57 @@ class EditorViewModelTest {
         }
 
         assertThat(recipes.saved.single().ingredients.single().quantity).isEqualTo(1.5)
+    }
+
+    @Test
+    fun `switching a line's unit across categories re-expresses the quantity via density`() = runTest {
+        val flourWithDensity = EditorTestData.flour.copy(densityGramsPerMl = 0.53)
+        val vm = viewModel(
+            recipeId = "r-cake",
+            ingredients = FakeIngredientRepository(listOf(flourWithDensity, EditorTestData.eggs)),
+        )
+        vm.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            vm.onLineUnitChange(0, MeasureUnit.MILLILITRE)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertThat(state.pendingDensityPrompt).isNull()
+            assertThat(state.lines[0].unit).isEqualTo(MeasureUnit.MILLILITRE)
+            // 300 g / 0.53 g/ml = 566.03... ml.
+            assertThat(state.lines[0].quantity.replace(',', '.').toDouble()).isWithin(0.01).of(300.0 / 0.53)
+        }
+    }
+
+    @Test
+    fun `switching to a unit with no known density asks for it, then retries once answered`() = runTest {
+        val fakeIngredients = FakeIngredientRepository(listOf(EditorTestData.flour, EditorTestData.eggs))
+        val vm = viewModel(recipeId = "r-cake", ingredients = fakeIngredients)
+        vm.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            vm.onLineUnitChange(0, MeasureUnit.MILLILITRE)
+            advanceUntilIdle()
+
+            val prompted = expectMostRecentItem()
+            val prompt = prompted.pendingDensityPrompt
+            assertThat(prompt).isNotNull()
+            assertThat(prompt!!.ingredientId).isEqualTo(EditorTestData.flour.id)
+            // The unit switch itself still applies; only the quantity is left as it was typed.
+            assertThat(prompted.lines[0].unit).isEqualTo(MeasureUnit.MILLILITRE)
+            assertThat(prompted.lines[0].quantity).isEqualTo("300")
+
+            vm.onDensityPromptConfirm(0.53, null)
+            advanceUntilIdle()
+
+            val resolved = expectMostRecentItem()
+            assertThat(resolved.pendingDensityPrompt).isNull()
+            assertThat(fakeIngredients.densityUpdates)
+                .containsExactly(Triple(EditorTestData.flour.id, 0.53, null))
+            assertThat(resolved.lines[0].quantity.replace(',', '.').toDouble()).isWithin(0.01).of(300.0 / 0.53)
+        }
     }
 }

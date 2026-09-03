@@ -57,6 +57,12 @@ uova non si possono dimezzare, che "un pizzico di sale" non si scala, e che una 
 
   ![Modalità cottura](screenshots/cook-mode.png)
 
+- **Conversione tra peso, volume e quantità.** Una ricetta scritta in tazze può essere scalata
+  dicendo quanto se ne ha in grammi, e ogni riga ingrediente può essere vista in un'altra unità di
+  misura — incluse quelle imperiali (once, libbre, once fluide, pinte, quarti, galloni) — tramite
+  la densità o il peso a pezzo di ciascun ingrediente. La prima volta che serve per un dato
+  ingrediente, l'app chiede quel dato e lo ricorda da allora in poi.
+
 - **Preferiti** con contatore delle volte in cui una ricetta è stata cucinata.
 - **Italiano e inglese**, scelti in Impostazioni indipendentemente dalla lingua del dispositivo,
   oppure lasciati seguire il sistema.
@@ -67,9 +73,8 @@ uova non si possono dimezzare, che "un pizzico di sale" non si scala, e che una 
 
 ## Cosa non fa (ancora)
 
-ProPortion non ha account, non sincronizza nulla nel cloud, non gestisce foto delle ricette, non
-importa ricette da testo incollato, e non converte tra massa e volume tramite la densità degli
-ingredienti (i millilitri e le tazze, che sono unità di volume, si convertono già oggi).
+ProPortion non ha account, non sincronizza nulla nel cloud, non gestisce foto delle ricette, e non
+importa ricette da testo incollato.
 
 ## Licenza
 

@@ -12,6 +12,7 @@ import com.ilsecondodasinistra.proportion.core.domain.scale.RecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
+import com.ilsecondodasinistra.proportion.core.domain.unit.UnitConverter
 import com.ilsecondodasinistra.proportion.core.domain.unit.UnitNamer
 import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeResult
@@ -155,6 +156,7 @@ class FakeRecipeRepository(initial: List<Recipe> = emptyList()) : RecipeReposito
 class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : IngredientRepository {
 
     private val stored = MutableStateFlow(initial)
+    val densityUpdates = mutableListOf<Triple<String, Double?, Double?>>()
 
     override fun observeAll(): Flow<List<Ingredient>> = stored
 
@@ -174,6 +176,20 @@ class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : Ingred
         )
         stored.value = stored.value + created
         return created
+    }
+
+    override suspend fun setDensityData(id: String, densityGramsPerMl: Double?, itemWeightGrams: Double?) {
+        densityUpdates += Triple(id, densityGramsPerMl, itemWeightGrams)
+        stored.value = stored.value.map { ingredient ->
+            if (ingredient.id != id) {
+                ingredient
+            } else {
+                ingredient.copy(
+                    densityGramsPerMl = densityGramsPerMl ?: ingredient.densityGramsPerMl,
+                    itemWeightGrams = itemWeightGrams ?: ingredient.itemWeightGrams,
+                )
+            }
+        }
     }
 }
 
@@ -266,8 +282,10 @@ class TestUnitNamer : UnitNamer {
     }
 }
 
+fun testConverter(): UnitConverter = DefaultUnitConverter()
+
 fun testFormatter(): QuantityFormatter =
-    QuantityFormatter(DefaultUnitConverter(), TestUnitNamer())
+    QuantityFormatter(testConverter(), TestUnitNamer())
 
 fun testScaler(): RecipeScaler {
     val converter = DefaultUnitConverter()

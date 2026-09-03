@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.proportion.feature.cook
 
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 
@@ -43,6 +44,19 @@ sealed interface ShoppingMessage {
     data object NothingToAdd : ShoppingMessage
 }
 
+/**
+ * The "ne ho" unit picker was set to a unit that needs data [ingredientId] doesn't have yet —
+ * surfaced as a "density unknown" prompt. Once persisted, [CookViewModel] simply recomputes: the
+ * constraint already carries [fromUnit]/[toUnit] via [CookUiState.ingredientUnitInput].
+ */
+data class DensityPromptRequest(
+    val ingredientId: String,
+    val ingredientName: String,
+    val requirement: DensityRequirement,
+    val fromUnit: MeasureUnit,
+    val toUnit: MeasureUnit,
+)
+
 data class CookUiState(
     val isLoading: Boolean = true,
     val recipe: Recipe? = null,
@@ -55,7 +69,10 @@ data class CookUiState(
     val factorValue: Double? = 1.0,
     val ingredientLineId: String? = null,
     val ingredientQuantityInput: String = "",
+    /** Null means "the recipe line's own unit" — the picker shows that until the user changes it. */
+    val ingredientUnitInput: MeasureUnit? = null,
     val pantryInputs: Map<String, String> = emptyMap(),
+    val pendingDensityPrompt: DensityPromptRequest? = null,
 
     val factor: Double = 1.0,
     val servings: Double? = null,

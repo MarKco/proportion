@@ -17,6 +17,15 @@
     <string name="unit_category_count">Count</string>
     <string name="unit_category_approximate">Approximate</string>
 
+    <!-- "Density unknown" prompt: shown when converting an ingredient across MASS/VOLUME/COUNT
+         needs data it does not have yet. Saved on the ingredient once entered, asked only once. -->
+    <string name="density_prompt_title">Unknown density</string>
+    <string name="density_prompt_body">%1$s needs this to convert between weight, volume and count. It is remembered from now on.</string>
+    <string name="density_prompt_density_label">Density (g/ml)</string>
+    <string name="density_prompt_item_weight_label">Weight of one (g)</string>
+    <string name="density_prompt_confirm">Save</string>
+    <string name="density_prompt_cancel">Cancel</string>
+
     <!-- Shared state bodies -->
     <string name="state_loading">Loading</string>
     <string name="state_error_title">Something went wrong</string>
@@ -27,12 +36,18 @@
     <!-- Unit names. Source language for these is English; values-it holds the Italian. -->
     <string name="unit_gram">g</string>
     <string name="unit_kilogram">kg</string>
+    <string name="unit_ounce">oz</string>
+    <string name="unit_pound">lb</string>
     <string name="unit_millilitre">ml</string>
     <string name="unit_litre">l</string>
     <string name="unit_teaspoon">tsp</string>
     <string name="unit_tablespoon">tbsp</string>
     <string name="unit_glass">glass</string>
     <string name="unit_cup">cup</string>
+    <string name="unit_fluid_ounce">fl oz</string>
+    <string name="unit_pint">pint</string>
+    <string name="unit_quart">quart</string>
+    <string name="unit_gallon">gallon</string>
     <string name="unit_to_taste">to taste</string>
     <string name="unit_pinch">a pinch</string>
     <string name="unit_drizzle">a drizzle</string>

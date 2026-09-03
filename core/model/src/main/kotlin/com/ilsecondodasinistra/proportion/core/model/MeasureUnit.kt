@@ -23,6 +23,9 @@ enum class UnitCategory {
 enum class MeasureUnit(val category: UnitCategory, val baseFactor: Double) {
     GRAM(UnitCategory.MASS, 1.0),
     KILOGRAM(UnitCategory.MASS, 1_000.0),
+    // Imperial mass, exact: 1 oz = 28.3495 g, 1 lb = 16 oz = 453.592 g.
+    OUNCE(UnitCategory.MASS, 28.3495),
+    POUND(UnitCategory.MASS, 453.592),
 
     MILLILITRE(UnitCategory.VOLUME, 1.0),
     LITRE(UnitCategory.VOLUME, 1_000.0),
@@ -32,6 +35,11 @@ enum class MeasureUnit(val category: UnitCategory, val baseFactor: Double) {
     TABLESPOON(UnitCategory.VOLUME, 15.0),
     GLASS(UnitCategory.VOLUME, 200.0),
     CUP(UnitCategory.VOLUME, 240.0),
+    // Imperial (US customary) volume, exact: docs/densities.json's own source table.
+    FLUID_OUNCE(UnitCategory.VOLUME, 29.5735),
+    PINT(UnitCategory.VOLUME, 473.176),
+    QUART(UnitCategory.VOLUME, 946.353),
+    GALLON(UnitCategory.VOLUME, 3785.41),
 
     PIECE(UnitCategory.COUNT, 1.0),
     EGG(UnitCategory.COUNT, 1.0),

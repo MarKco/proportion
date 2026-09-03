@@ -2,23 +2,94 @@
 
 ## Resume here (read this first after a break)
 
-**Where things stand:** phases 1 to 8 are done. v1 is feature-complete and polished (phases 1-7),
-and phase 8 (2026-09-03) added the comprehensive, translated, autocompleted ingredient catalogue —
-see the dedicated entry below. The app builds, installs, and does the whole job: enter a recipe,
-find it, rescale it four different ways, share it, back it up and restore it, see a dashboard, keep
-a shopping list, follow a recipe in cooking mode, and now enter ingredients from a real 477-entry
-bilingual catalogue instead of typing every one from scratch. Translations are complete and
-parity-checked, accessibility has had a real on-device pass (TalkBack + large text), the two motion
-animations the design system always promised are wired up, `docs/public` and `docs/manual` exist in
-both languages, and a release-signing mechanism is ready (no keystore created yet — that's Marco's
-own step whenever he has one; see `docs/private/release-checklist.md`). `./gradlew verifyAll` is
-green (detekt, lint, every test, a debug APK) and `./gradlew assembleRelease` succeeds unsigned.
-Verified end to end on a Fairphone 3 (Android 13) on 2026-09-03, including a real schema migration
-against that device's own pre-existing recipes (zero data loss) and live bilingual autocomplete.
+**Where things stand:** phases 1 to 9 are done. v1 is feature-complete and polished (phases 1-7),
+phase 8 (2026-09-03) added the comprehensive, translated, autocompleted ingredient catalogue, and
+**phase 9 (2026-09-03) added cross-category unit conversion via ingredient density/item-weight —
+the key v2 feature Marco asked for by name**, across all three UX flows the spec called for. The
+app builds, installs, and does the whole job: enter a recipe, find it, rescale it four different
+ways (now including "I have 200g" of an ingredient the recipe wrote in cups), share it, back it up
+and restore it, see a dashboard, keep a shopping list, follow a recipe in cooking mode, enter
+ingredients from a real 477-entry bilingual catalogue, and convert any ingredient line between
+weight, volume and count — including imperial units (oz, lb, fl oz, pint, quart, gallon), added
+mid-session on request. `./gradlew verifyAll` is green (detekt, lint, every test, a debug APK).
+Verified end to end on a Fairphone 3 (Android 13) on 2026-09-03: a real schema migration (v2→v3)
+against the device's own pre-existing recipes (zero data loss), and all three conversion flows
+exercised live with a literal ingredient that had no density recorded — see "Phase 9" below for
+what that live pass actually found and fixed.
 
-**What is next:** phase 8's two known limitations (search by built-in ingredient name, and
-autocomplete always overwriting the unit) were both fixed right after shipping — see "Added after
-phase 8" below. No phase 9 has been scoped yet.
+**What is next:** no phase 10 has been scoped yet. Two small things Marco flagged live during this
+session were fixed on the spot rather than deferred — see "Also fixed this session" below — since
+they were quick and he was watching the app run. `IngredientResourceConsistencyTest` has not been
+extended to assert density/item-weight coverage on the 477 built-ins; worth doing before the next
+catalogue edit, not urgent on its own.
+
+**Phase 9, 2026-09-03: cross-category unit conversion.** Spec:
+`docs/private/specs/2026-09-03-unit-conversion-density-design.md`. Split across two sessions — the
+first (token budget ran out mid-flight) shipped the core engine and the Editor flow only, skipping
+the usual `writing-plans` document per Marco's explicit request to prioritise working code over
+process ceremony that day; the second finished Cook and Detail, found and fixed a real bug through
+live device testing, and added imperial units on request.
+
+- `Ingredient`/`IngredientEntity` gained `itemWeightGrams` (mirrors `densityGramsPerMl`); schema
+  bumped to **version 3**, `Migration2to3` adds the column and backfills both fields on existing
+  built-in rows from the seed asset (`ProPortionDatabase.seedIngredientDensities`), tested with
+  `MigrationTestHelper` and verified live against a device with pre-existing recipes.
+- `docs/densities.json` (477 entries, Marco's own data — density in g/ml, plus `itemWeightGrams`
+  for countable ingredients he asked to add mid-brainstorm) merged into
+  `core/database/src/main/assets/ingredients.json`; every built-in ingredient now carries real data.
+- `UnitConverter`/`IngredientRef` (`core/domain/.../unit/UnitConverter.kt`) rewritten: cross-category
+  conversion (MASS↔VOLUME via density, COUNT↔MASS/VOLUME via item weight, chained through grams as
+  the hub) — signature unchanged, still sync/pure. `requirementFor(from, to, ingredient):
+  DensityRequirement` tells a caller exactly what is missing (`NONE` when the ingredient already
+  carries what's needed, `DENSITY`/`ITEM_WEIGHT`/`BOTH`, or `UNSUPPORTED` when no answer would help)
+  — this went through one real bug fix itself: the first version answered structurally (what a unit
+  pair needs in general) rather than checking whether the given ingredient actually had it, so Cook's
+  proactive check offered the "density unknown" dialog even for ingredients that already had a
+  density. Fixed and covered by dedicated tests once caught by a Cook regression test.
+- Removed `DensityRepository`/`NoDensityRepository` (dead v1 placeholder, superseded by density
+  living directly on `Ingredient`/`IngredientRef` — `Ingredient.toRef()` is the bridge).
+- **Real pre-existing bug fixed**: `DefaultRecipeScaler.resolveIngredient`/`resolveAvailability`
+  were calling `converter.convert(...)` without ever passing the ingredient — cross-category Cook
+  constraints were silently impossible even where density was known. Fixed, regression test added.
+- **Editor (Caso 1)**: `EditorViewModel.onLineUnitChange` re-expresses the quantity through
+  `UnitConverter` when the unit category changes (3 cups sugar → 300 g). When the ingredient
+  (matched live by name against the catalogue) lacks the data, `pendingDensityPrompt` surfaces the
+  shared `DensityPromptDialog`; answering it persists via a new `IngredientRepository.setDensityData`
+  and retries immediately.
+- **Cook (Caso 3)**: `IngredientConstraintInput` gained a `UnitPicker` next to the "ne ho" field
+  (previously absent — the unit was hard-pinned to the recipe line's own unit). Same density-prompt
+  pattern as Editor, via `CookViewModel.onIngredientUnitChange`/`onDensityPromptConfirm`.
+- **Recipe detail (Caso 2)**: tapping a scalable ingredient row opens a `ModalBottomSheet`
+  (`ConversionSheet` in `RecipeDetailScreen.kt`) with a `UnitPicker` and the live-converted value —
+  read-only, nothing written to the recipe. `RecipeDetailViewModel.tryConvert(lineId, unit)` is a
+  pure query the sheet calls on every recomposition.
+- **Real bug found live on-device, fixed same session**: after answering the density prompt in the
+  Detail sheet, the conversion result did not refresh — `uiState`'s reactive `Recipe` flow did not
+  visibly re-emit fast enough (or at all, for this session's fakes/observation chain) for the sheet
+  to see the new density on the very next frame. Fixed with an explicit `densityOverrides` map in
+  `RecipeDetailViewModel` applied immediately on confirm, independent of Flow timing — the same
+  "trust the local write, don't wait for the round trip" pattern Editor/Cook already used. Verified
+  fixed live: entered a density for "Farina 00" (a literal ingredient predating the catalogue) on a
+  real recipe, saw "2 ⅓ tazza" appear immediately, and confirmed the value survived an app restart
+  (read back correctly from the database on a fresh process).
+- **Imperial units added on request** (Marco, live): `MeasureUnit` gained `OUNCE`, `POUND` (MASS)
+  and `FLUID_OUNCE`, `PINT`, `QUART`, `GALLON` (VOLUME), exact US-customary factors from the same
+  density guide. Automatically usable everywhere (`UnitPicker` iterates `MeasureUnit.entries`, the
+  `.proportion` codec accepts any entry by name) — the only code touched was `AndroidUnitNamer`
+  (new strings, split into `continuousName`/`countName` to stay under detekt's complexity limit) and
+  `core/ui`'s `values`/`values-it` strings.
+- Tests: new cases in `DefaultUnitConverterTest`, `RecipeScalerByIngredientTest`, a `MigrationTest`
+  for the 2→3 backfill, and ViewModel-level density-prompt round-trips in all three features
+  (`EditorViewModelTest`, `CookViewModelTest`, `RecipeDetailViewModelTest`).
+
+**Also fixed this session (Marco flagged live while the app was running, not part of phase 9):**
+- **Cook's three action buttons** ("Vedi la scheda" / "Salva questa scalatura" / "Aggiungi alla
+  lista della spesa") wrapped onto three lines each at a third of the screen width. Now stacked
+  full-width in a `Column`, primary action first — `CookScreen.kt`.
+- **Home dashboard**: the "N ricette" caption sat inside the donut chart at `Alignment.BottomCenter`,
+  overlapping the ring itself rather than sitting cleanly below it. `DonutChart`'s `centreCaption`
+  is now optional (only the big number stays inside the ring); `NumbersCard` shows "N ricette · N
+  cotture registrate · N preferiti" as one row below the chart instead.
 
 **Note on tooling, 2026-09-03:** the `superpowers` Claude Code plugin (used for phases 6-8's
 brainstorm → spec → plan → subagent-driven-execution workflow) is now disabled — Marco turned it
@@ -191,11 +262,10 @@ Living checklist, updated as work progresses. If a session ends, this file says 
 
 **Legend:** `[ ]` not started · `[~]` in progress · `[x]` done
 
-Last updated: 2026-09-03 (phases 1–8 complete; phase 8 added the 477-entry translated ingredient
-catalogue, then both its known limitations were fixed plus two UI requests (search by built-in
-ingredient name, unit-keeps-if-compatible, editor scroll clearance, top-level edit button);
-`verifyAll` and `assembleRelease` both green, verified on a Fairphone 3 / Android 13 against real
-pre-existing data)
+Last updated: 2026-09-03 (phases 1–9 complete; phase 9 added cross-category unit conversion via
+density/item-weight across editor, cook and detail, plus imperial units, a Cook button-layout fix
+and a Home dashboard caption fix; `verifyAll` green, verified on a Fairphone 3 / Android 13 against
+real pre-existing data, including a live density-entry round trip surviving an app restart)
 
 ## Phase 0 — Design
 - [x] Brainstorming and decisions
@@ -375,6 +445,35 @@ comprehensive, correctly-translated pre-populated ingredient list, fast autocomp
 Full execution ledger (every ruling, every gap found mid-execution, every review verdict):
 `.superpowers/sdd/2026-09-03-phase-8-ingredient-catalogue/progress.md`.
 
+## Phase 9 — Cross-category unit conversion  <-- DONE
+Spec: `docs/private/specs/2026-09-03-unit-conversion-density-design.md`. No implementation plan
+document — done directly against the spec across two sessions (see the detailed entry above for
+what each covered and why). Marco's original ask: open a recipe written in cups and say "I have
+200g", or a recipe in ml and ask "how many g" — v2's headline feature, named explicitly back when
+v1 shipped.
+
+- [x] `itemWeightGrams` column, schema v3, `Migration2to3` with backfill (density + item weight) on
+      existing built-in rows — tested with `MigrationTestHelper`, verified live on a real device
+- [x] `docs/densities.json` (477 entries + `itemWeightGrams` for countables) merged into the seed
+      asset
+- [x] `UnitConverter`/`IngredientRef` cross-category rewrite (MASS↔VOLUME↔COUNT via grams as the
+      hub); `requirementFor` for "what's missing" — one real bug in this itself, found by a Cook
+      regression test and fixed (see above)
+- [x] Real pre-existing bug fixed: `DefaultRecipeScaler` never passed the ingredient into `convert`
+- [x] Editor (Caso 1): unit change re-expresses the quantity; density prompt on demand
+- [x] Cook (Caso 3): `UnitPicker` added to the "ne ho" field; same density prompt
+- [x] Recipe detail (Caso 2): tap-a-row `ModalBottomSheet`, read-only conversion; same density prompt
+- [x] Real bug found live on-device (Detail sheet didn't refresh after answering the prompt) — fixed
+      with an explicit override map, independent of Flow timing; re-verified live, including a
+      density value surviving an app restart
+- [x] Imperial units (`OUNCE`, `POUND`, `FLUID_OUNCE`, `PINT`, `QUART`, `GALLON`) added on request,
+      fully wired with no call-site changes beyond naming
+- [x] Also fixed live: Cook's three action buttons wrapping onto three lines; Home dashboard's
+      recipe-count caption overlapping the donut chart
+- [x] `verifyAll` green; verified live on the Fairphone 3 against real pre-existing data (a schema
+      migration, a live density entry on a literal ingredient, cross-category conversion in all
+      three flows, imperial units in the picker)
+
 ## Build environment (verified 2026-09-01)
 - Gradle 9.7.1 wrapper, AGP 9.4.0, Kotlin 2.3.21, KSP 2.3.11, Hilt 2.60.1, Room 2.8.4.
 - **AGP 9 ships built-in Kotlin support** — convention plugins must NOT apply `org.jetbrains.kotlin.android`.
@@ -386,4 +485,5 @@ Full execution ledger (every ruling, every gap found mid-execution, every review
 
 ## Notes
 - Never commit or push: Marco does that himself.
-- v2 readiness kept alive: density column, `UnitConverter` signature, tolerant JSON parser.
+- v2's density/unit-conversion readiness (density column, `UnitConverter` signature) shipped in
+  phase 9 — the plan worked, the seams the v1 team left needed no rework, just filling in.

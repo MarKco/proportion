@@ -34,8 +34,8 @@ data class IngredientEntity(
     @ColumnInfo(name = "is_built_in") val isBuiltIn: Boolean = false,
     @ColumnInfo(name = "default_unit") val defaultUnit: MeasureUnit = MeasureUnit.GRAM,
     val category: IngredientCategory? = null,
-    /** v2 preparation: created in schema 1, written by nobody in v1. Do not drop. */
     @ColumnInfo(name = "density_g_per_ml") val densityGramsPerMl: Double? = null,
+    @ColumnInfo(name = "item_weight_grams") val itemWeightGrams: Double? = null,
 )
 
 @Entity(

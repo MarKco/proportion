@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.proportion.core.model.Ingredient
+import com.ilsecondodasinistra.proportion.core.ui.component.DensityPromptDialog
 import com.ilsecondodasinistra.proportion.core.ui.component.UnitPicker
 import com.ilsecondodasinistra.proportion.core.ui.tagLabel
 import com.ilsecondodasinistra.proportion.core.ui.unitLabel
@@ -97,6 +98,8 @@ fun EditorRoute(
         onSuggestionPick = viewModel::onSuggestionPick,
         onLineQuantityChange = viewModel::onLineQuantityChange,
         onLineUnitChange = viewModel::onLineUnitChange,
+        onDensityPromptConfirm = viewModel::onDensityPromptConfirm,
+        onDensityPromptDismiss = viewModel::onDensityPromptDismiss,
         onAddLine = viewModel::onAddLine,
         onNewLineFocusHandled = viewModel::onNewLineFocusHandled,
         onRemoveLine = viewModel::onRemoveLine,
@@ -120,6 +123,8 @@ fun EditorScreen(
     onSuggestionPick: (Int, Ingredient) -> Unit,
     onLineQuantityChange: (Int, String) -> Unit,
     onLineUnitChange: (Int, com.ilsecondodasinistra.proportion.core.model.MeasureUnit) -> Unit,
+    onDensityPromptConfirm: (Double?, Double?) -> Unit,
+    onDensityPromptDismiss: () -> Unit,
     onAddLine: () -> Unit,
     onNewLineFocusHandled: () -> Unit,
     onRemoveLine: (Int) -> Unit,
@@ -278,6 +283,15 @@ fun EditorScreen(
                 }
             },
             modifier = Modifier.testTag("discard_dialog"),
+        )
+    }
+
+    state.pendingDensityPrompt?.let { prompt ->
+        DensityPromptDialog(
+            ingredientName = prompt.ingredientName,
+            requirement = prompt.requirement,
+            onDismiss = onDensityPromptDismiss,
+            onConfirm = onDensityPromptConfirm,
         )
     }
 }

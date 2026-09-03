@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.proportion.feature.editor
 
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
 import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Tag
@@ -11,6 +12,21 @@ data class EditorLine(
     val quantity: String = "",
     val unit: MeasureUnit = MeasureUnit.GRAM,
     val note: String? = null,
+)
+
+/**
+ * A unit change on [lineIndex] would cross a category boundary that needs data [ingredientId]
+ * doesn't have yet — surfaced as a "density unknown" prompt. [qty]/[fromUnit]/[toUnit] are the
+ * conversion the prompt's answer will retry.
+ */
+data class DensityPromptRequest(
+    val lineIndex: Int,
+    val ingredientId: String,
+    val ingredientName: String,
+    val requirement: DensityRequirement,
+    val qty: Double,
+    val fromUnit: MeasureUnit,
+    val toUnit: MeasureUnit,
 )
 
 enum class ValidationError {
@@ -42,6 +58,8 @@ data class EditorUiState(
      * the screen once it has acted on it.
      */
     val justAddedLineId: String? = null,
+    /** Set when a unit change needs density/item-weight data the ingredient doesn't have yet. */
+    val pendingDensityPrompt: DensityPromptRequest? = null,
 ) {
     val isEditing: Boolean get() = recipeId != null
 

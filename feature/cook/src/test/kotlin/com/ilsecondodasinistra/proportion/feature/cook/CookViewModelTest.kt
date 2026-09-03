@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,11 +30,13 @@ class CookViewModelTest {
             listOf(CookTestData.cake, CookTestData.ovenCake, CookTestData.eggRecipe, CookTestData.jam),
         ),
         shopping: FakeShoppingRepository = FakeShoppingRepository(),
+        ingredients: FakeIngredientRepository = FakeIngredientRepository(),
     ) = CookViewModel(
         savedStateHandle = SavedStateHandle(mapOf("recipeId" to recipe.id)),
         recipeRepository = recipes,
         variantRepository = variants,
         shoppingRepository = shopping,
+        ingredientRepository = ingredients,
         scaler = testScaler(),
         formatter = testFormatter(),
     )
@@ -243,6 +246,53 @@ class CookViewModelTest {
         }
 
         assertThat(recipes.markCookedCalls).isEqualTo(0)
+    }
+
+    @Test
+    fun `constraining in millilitres works when the ingredient has a known density`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onModeChange(CookMode.INGREDIENT)
+            vm.onIngredientSelected("line-farina")
+            vm.onIngredientUnitChange(MeasureUnit.MILLILITRE)
+            vm.onIngredientQuantityChange("530")
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertThat(state.pendingDensityPrompt).isNull()
+            // 530 ml x 0.53 g/ml = 280.9 g, against the recipe's own 300 g.
+            assertThat(state.factor).isWithin(1e-6).of(280.9 / 300.0)
+        }
+    }
+
+    @Test
+    fun `picking a unit with no known data opens the density prompt, and answering it retries`() = runTest {
+        val ingredients = FakeIngredientRepository()
+        val vm = viewModel(ingredients = ingredients)
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onModeChange(CookMode.INGREDIENT)
+            vm.onIngredientSelected("line-uova")
+            vm.onIngredientUnitChange(MeasureUnit.GRAM)
+            advanceUntilIdle()
+
+            val prompted = expectMostRecentItem()
+            val prompt = prompted.pendingDensityPrompt
+            assertThat(prompt).isNotNull()
+            assertThat(prompt!!.ingredientId).isEqualTo("ing-uova")
+            assertThat(prompt.requirement).isEqualTo(DensityRequirement.ITEM_WEIGHT)
+
+            vm.onDensityPromptConfirm(null, 55.0)
+            vm.onIngredientQuantityChange("110")
+            advanceUntilIdle()
+
+            val resolved = expectMostRecentItem()
+            assertThat(resolved.pendingDensityPrompt).isNull()
+            assertThat(ingredients.densityUpdates).containsExactly(Triple("ing-uova", null, 55.0))
+            // 110 g / 55 g per egg = 2 eggs, exactly what the recipe already wants: factor stays 1.
+            assertThat(resolved.factor).isWithin(1e-9).of(1.0)
+        }
     }
 
     @Test

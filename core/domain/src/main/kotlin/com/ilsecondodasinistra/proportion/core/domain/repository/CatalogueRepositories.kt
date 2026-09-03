@@ -13,6 +13,13 @@ interface IngredientRepository {
 
     /** Looks the name up by its normalised form and creates the ingredient when it is new. */
     suspend fun findOrCreate(name: String, defaultUnit: MeasureUnit): Ingredient
+
+    /**
+     * Persists a density and/or item weight the user just typed into the "unknown density" prompt,
+     * so the same ingredient never asks again. Either argument may be null when that value was not
+     * part of what was asked for.
+     */
+    suspend fun setDensityData(id: String, densityGramsPerMl: Double?, itemWeightGrams: Double?)
 }
 
 interface TagRepository {

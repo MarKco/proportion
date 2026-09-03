@@ -18,6 +18,7 @@
     <string name="recipe_detail_cook">Esegui ricetta</string>
     <string name="recipe_detail_cook_unavailable">Disponibile nel prossimo aggiornamento</string>
     <string name="recipe_detail_ingredients">Ingredienti</string>
+    <string name="recipe_detail_ingredients_hint">Tocca un ingrediente per vederlo in un\'altra unità di misura.</string>
     <string name="recipe_detail_steps">Procedimento</string>
     <string name="recipe_detail_variants">Scalature salvate</string>
     <string name="recipe_detail_not_found">Questa ricetta non è più disponibile.</string>
@@ -30,6 +31,10 @@
     <string name="recipe_no_servings">Non a persona</string>
     <string name="detail_showing_variant">Stai vedendo: %1$s</string>
     <string name="detail_view_original">Visualizza l\'originale</string>
+    <string name="detail_conversion_title">Converti unità</string>
+    <string name="detail_conversion_description">Scegli un\'unità per vedere l\'equivalente. Questo non modifica mai la ricetta — viene salvata solo un\'eventuale densità o peso che inserisci qui sotto, così non viene richiesta più per questo ingrediente.</string>
+    <string name="detail_conversion_original">Come scritto: %1$s</string>
+    <string name="detail_conversion_unsupported">Non è possibile convertire in questa unità.</string>
 
     <plurals name="recipes_result_count">
         <item quantity="one">%d ricetta</item>

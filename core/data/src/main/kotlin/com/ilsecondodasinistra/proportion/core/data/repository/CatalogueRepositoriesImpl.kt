@@ -50,6 +50,11 @@ class IngredientRepositoryImpl @Inject constructor(
         dao.upsertAll(listOf(created))
         return created.toDomain(namer)
     }
+
+    override suspend fun setDensityData(id: String, densityGramsPerMl: Double?, itemWeightGrams: Double?) {
+        densityGramsPerMl?.let { dao.updateDensity(id, it) }
+        itemWeightGrams?.let { dao.updateItemWeight(id, it) }
+    }
 }
 
 class TagRepositoryImpl @Inject constructor(

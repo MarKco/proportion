@@ -65,6 +65,18 @@ class RecipeScalerByIngredientTest {
     }
 
     @Test
+    fun `constraining in millilitres succeeds when the ingredient carries a known density`() {
+        // 125 ml x 0.96 g/ml = 120 g, exactly the recipe's own amount: factor stays at one.
+        val scaled = succeed(
+            scaler.scale(
+                TestRecipes.appleCake,
+                ScaleConstraint.ByIngredient("line-Burro", 125.0, MeasureUnit.MILLILITRE),
+            ),
+        )
+        assertThat(scaled.factor).isWithin(1e-9).of(1.0)
+    }
+
+    @Test
     fun `constraining an unknown line is rejected`() {
         val result = scaler.scale(
             TestRecipes.appleCake,

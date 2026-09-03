@@ -11,18 +11,26 @@ import com.ilsecondodasinistra.proportion.core.model.Tag
 
 internal object TestRecipes {
 
-    fun ingredient(name: String, unit: MeasureUnit = MeasureUnit.GRAM) = Ingredient(
-        id = "ing-$name",
-        key = null,
-        name = name,
-        normalisedName = name.lowercase(),
-        isBuiltIn = false,
-        defaultUnit = unit,
-    )
+    fun ingredient(name: String, unit: MeasureUnit = MeasureUnit.GRAM, densityGramsPerMl: Double? = null) =
+        Ingredient(
+            id = "ing-$name",
+            key = null,
+            name = name,
+            normalisedName = name.lowercase(),
+            isBuiltIn = false,
+            defaultUnit = unit,
+            densityGramsPerMl = densityGramsPerMl,
+        )
 
-    fun line(name: String, qty: Double?, unit: MeasureUnit, position: Int = 0) = RecipeIngredient(
+    fun line(
+        name: String,
+        qty: Double?,
+        unit: MeasureUnit,
+        position: Int = 0,
+        densityGramsPerMl: Double? = null,
+    ) = RecipeIngredient(
         id = "line-$name",
-        ingredient = ingredient(name, unit),
+        ingredient = ingredient(name, unit, densityGramsPerMl),
         position = position,
         quantity = qty,
         unit = unit,
@@ -39,7 +47,7 @@ internal object TestRecipes {
         ingredients = listOf(
             line("Farina", 300.0, MeasureUnit.GRAM, 0),
             line("Uova", 2.0, MeasureUnit.EGG, 1),
-            line("Burro", 120.0, MeasureUnit.GRAM, 2),
+            line("Burro", 120.0, MeasureUnit.GRAM, 2, densityGramsPerMl = 0.96),
             line("Sale", null, MeasureUnit.TO_TASTE, 3),
         ),
         tags = emptyList(),

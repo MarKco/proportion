@@ -30,6 +30,8 @@ class EditorScreenTest {
                     onSuggestionPick = { _, _ -> },
                     onLineQuantityChange = { _, _ -> },
                     onLineUnitChange = { _, _ -> },
+                    onDensityPromptConfirm = { _, _ -> },
+                    onDensityPromptDismiss = {},
                     onAddLine = {},
                     onNewLineFocusHandled = {},
                     onRemoveLine = {},

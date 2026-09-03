@@ -56,7 +56,6 @@ fun NumbersCard(
                 DonutChart(
                     slices = donutSlices.map { it.toDonutSlice() },
                     centreLabel = recipeCount.toString(),
-                    centreCaption = pluralStringResource(R.plurals.home_recipes_count, recipeCount, recipeCount),
                     diameter = 120.dp,
                     thickness = 16.dp,
                 )
@@ -79,6 +78,11 @@ fun NumbersCard(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                Text(
+                    text = pluralStringResource(R.plurals.home_recipes_count, recipeCount, recipeCount),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("recipe_count"),
+                )
                 Text(
                     text = pluralStringResource(R.plurals.home_cooks_count, totalCooks, totalCooks),
                     style = MaterialTheme.typography.bodyMedium,

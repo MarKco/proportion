@@ -33,7 +33,7 @@ import kotlinx.serialization.json.decodeFromStream
         ScaleVariantEntity::class,
         ShoppingItemEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -65,6 +65,7 @@ abstract class ProPortionDatabase : RoomDatabase() {
                     )
                 }
                 seedBuiltInIngredients(db, context)
+                seedIngredientDensities(db, context)
             }
         }
 
@@ -100,6 +101,25 @@ abstract class ProPortionDatabase : RoomDatabase() {
                 )
             }
         }
+
+        /**
+         * Backfills `density_g_per_ml`/`item_weight_grams` on the built-in catalogue rows from the
+         * same bundled asset. Split from [seedBuiltInIngredients] because it needs the
+         * `item_weight_grams` column (added in schema 3) and must also run against rows that were
+         * already inserted by an earlier migration/`onCreate` — an `UPDATE`, not an `INSERT`.
+         */
+        @OptIn(ExperimentalSerializationApi::class)
+        internal fun seedIngredientDensities(db: SupportSQLiteDatabase, context: Context) {
+            val seeds: List<IngredientSeed> = context.assets.open("ingredients.json").use { stream ->
+                Json.decodeFromStream(stream)
+            }
+            seeds.forEach { seed ->
+                db.execSQL(
+                    "UPDATE ingredients SET density_g_per_ml = ?, item_weight_grams = ? WHERE id = ?",
+                    arrayOf<Any?>(seed.density, seed.itemWeightGrams, builtInIngredientId(seed.key)),
+                )
+            }
+        }
     }
 }
 
@@ -109,5 +129,17 @@ class Migration1to2(private val context: Context) : Migration(1, 2) {
         db.execSQL("ALTER TABLE ingredients ADD COLUMN is_built_in INTEGER NOT NULL DEFAULT 0")
         db.execSQL("ALTER TABLE ingredients ADD COLUMN category TEXT DEFAULT NULL")
         ProPortionDatabase.seedBuiltInIngredients(db, context)
+    }
+}
+
+class Migration2to3(private val context: Context) : Migration(SCHEMA_2, SCHEMA_3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE ingredients ADD COLUMN item_weight_grams REAL DEFAULT NULL")
+        ProPortionDatabase.seedIngredientDensities(db, context)
+    }
+
+    private companion object {
+        const val SCHEMA_2 = 2
+        const val SCHEMA_3 = 3
     }
 }

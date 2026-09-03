@@ -58,6 +58,12 @@ not bake for 1.5x the time.
 
   ![Cooking mode](screenshots/cook-mode.png)
 
+- **Convert between weight, volume and count.** A recipe written in cups can be rescaled by saying
+  how much you have in grams, and any ingredient line can be viewed in another unit of measure —
+  including imperial ones (ounces, pounds, fluid ounces, pints, quarts, gallons) — via each
+  ingredient's density or per-item weight. The first time it is needed for a given ingredient, the
+  app asks for that one number and remembers it from then on.
+
 - **Favourites** with a counter of how many times a recipe has been cooked.
 - **Italian and English**, chosen independently of the device's own language from Settings, or left
   to follow the system.
@@ -67,9 +73,8 @@ not bake for 1.5x the time.
 
 ## What it does not do (yet)
 
-ProPortion has no accounts, does not sync anything to the cloud, does not handle recipe photos,
-does not import recipes from pasted text, and does not convert between mass and volume via
-ingredient density (millilitres and cups, which are volume units, already convert today).
+ProPortion has no accounts, does not sync anything to the cloud, does not handle recipe photos, and
+does not import recipes from pasted text.
 
 ## Licence
 

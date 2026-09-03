@@ -4,11 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
 import com.ilsecondodasinistra.proportion.core.transfer.PlainTextStrings
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
 import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
+import com.ilsecondodasinistra.proportion.feature.recipes.detail.ConversionResult
 import com.ilsecondodasinistra.proportion.feature.recipes.detail.RecipeDetailUiState
 import com.ilsecondodasinistra.proportion.feature.recipes.detail.RecipeDetailViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,12 +40,15 @@ class RecipeDetailViewModelTest {
         id: String = "r-cake",
         recipe: Recipe? = null,
         variants: List<ScaleVariant>? = null,
+        ingredients: FakeIngredientRepository = FakeIngredientRepository(),
     ) = RecipeDetailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("recipeId" to id)),
         recipeRepository = recipe?.let { FakeRecipeRepository(listOf(it, TestData.risotto)) } ?: recipes,
         variantRepository = variants?.let { FakeScaleVariantRepository(it) } ?: this.variants,
         transferRepository = FakeTransferRepository(listOf(recipe ?: TestData.cake, TestData.risotto)),
+        ingredientRepository = ingredients,
         formatter = testFormatter(),
+        converter = testConverter(),
         scaler = testScaler(),
     )
 
@@ -58,6 +63,49 @@ class RecipeDetailViewModelTest {
             assertThat(content.recipe.title).isEqualTo("Torta di mele")
             assertThat(content.lines.map { it.quantityText })
                 .containsExactly("300 g", "2 uova").inOrder()
+        }
+    }
+
+    @Test
+    fun `tryConvert shows the equivalent in another unit without touching the recipe`() = runTest {
+        val flourWithDensity = TestData.flour.copy(densityGramsPerMl = 0.53)
+        val recipe = TestData.cake.copy(
+            ingredients = listOf(TestData.cake.ingredients[0].copy(ingredient = flourWithDensity)) +
+                TestData.cake.ingredients.drop(1),
+        )
+        val vm = viewModel(recipe = recipe)
+        vm.uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+
+            // 300 g / 0.53 g/ml = 566.03... ml, rounded to something readable by the formatter.
+            val result = vm.tryConvert("l-1", MeasureUnit.MILLILITRE)
+            assertThat(result).isInstanceOf(ConversionResult.Converted::class.java)
+            assertThat((result as ConversionResult.Converted).formatted.value).isWithin(2.0).of(300.0 / 0.53)
+
+            // Nothing was written back: the recipe as observed is untouched.
+            assertThat((state as RecipeDetailUiState.Content).lines.first().quantityText).isEqualTo("300 g")
+        }
+    }
+
+    @Test
+    fun `tryConvert asks for density when the ingredient does not have one, and persists the answer`() = runTest {
+        val ingredients = FakeIngredientRepository()
+        val vm = viewModel(ingredients = ingredients)
+        vm.uiState.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+
+            val result = vm.tryConvert("l-1", MeasureUnit.MILLILITRE)
+            assertThat(result).isInstanceOf(ConversionResult.NeedsDensity::class.java)
+            val prompt = (result as ConversionResult.NeedsDensity).prompt
+            assertThat(prompt.ingredientId).isEqualTo(TestData.flour.id)
+            assertThat(prompt.requirement).isEqualTo(DensityRequirement.DENSITY)
+
+            vm.onDensityPromptConfirm(prompt.ingredientId, 0.53, null)
+            advanceUntilIdle()
+
+            assertThat(ingredients.densityUpdates).containsExactly(Triple(TestData.flour.id, 0.53, null))
         }
     }
 

@@ -7,6 +7,10 @@
 - Scelta del tema dell'app in Impostazioni: a colori dallo sfondo disattivati, si può scegliere tra
   quattro temi (Pastello, Vivace, Allegra, Alto contrasto), ognuno con una variante chiara e una
   scura.
+- Catalogo di 477 ingredienti predefiniti, tradotto e con autocompletamento durante l'inserimento.
+- Conversione di una riga ingrediente tra peso, volume e quantità (anche unità imperiali: once,
+  libbre, once fluide, pinte, quarti, galloni), sia nella ricetta che durante la cottura scegliendo
+  "per un ingrediente".
 
 ## 1.0 — 2026-09-02
 

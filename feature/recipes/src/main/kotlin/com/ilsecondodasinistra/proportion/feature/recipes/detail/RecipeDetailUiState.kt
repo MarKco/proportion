@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.proportion.feature.recipes.detail
 
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
+import com.ilsecondodasinistra.proportion.core.domain.unit.FormattedQuantity
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.ScaleVariant
 
@@ -9,6 +11,23 @@ data class DetailLine(
     val name: String,
     val quantityText: String,
     val note: String?,
+)
+
+/**
+ * What tapping a [DetailLine] and picking another unit resolves to — informational only, never
+ * written back to the recipe.
+ */
+sealed interface ConversionResult {
+    data class Converted(val formatted: FormattedQuantity) : ConversionResult
+    data class NeedsDensity(val prompt: DensityPromptRequest) : ConversionResult
+    data object Unsupported : ConversionResult
+}
+
+/** Mirrors the editor's/cook's own prompt: asked once, then persisted on the ingredient. */
+data class DensityPromptRequest(
+    val ingredientId: String,
+    val ingredientName: String,
+    val requirement: DensityRequirement,
 )
 
 /** The saved scaling currently on screen, if any. Null means the recipe as written. */

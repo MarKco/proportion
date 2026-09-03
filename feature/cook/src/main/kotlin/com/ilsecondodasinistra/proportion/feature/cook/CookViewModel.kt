@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.ilsecondodasinistra.proportion.core.domain.repository.IngredientRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.ScaleVariantRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.ShoppingRepository
@@ -16,7 +17,11 @@ import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleWarning
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledLine
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledRecipe
 import com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
+import com.ilsecondodasinistra.proportion.core.domain.unit.requirementFor
+import com.ilsecondodasinistra.proportion.core.domain.unit.toRef
+import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.feature.cook.navigation.CookRouteKey
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,6 +46,7 @@ class CookViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val variantRepository: ScaleVariantRepository,
     private val shoppingRepository: ShoppingRepository,
+    private val ingredientRepository: IngredientRepository,
     private val scaler: RecipeScaler,
     private val formatter: QuantityFormatter,
 ) : ViewModel() {
@@ -91,6 +97,8 @@ class CookViewModel @Inject constructor(
                 servingsInput = state.servings?.roundedServings() ?: state.servingsInput,
                 ingredientQuantityInput = "",
                 ingredientLineId = if (mode == CookMode.INGREDIENT) state.ingredientLineId else null,
+                ingredientUnitInput = null,
+                pendingDensityPrompt = null,
                 pantryInputs = if (mode == CookMode.PANTRY) state.pantryInputs else emptyMap(),
                 error = null,
             )
@@ -114,6 +122,8 @@ class CookViewModel @Inject constructor(
             it.copy(
                 ingredientLineId = lineId,
                 ingredientQuantityInput = line?.quantity?.toInputText().orEmpty(),
+                ingredientUnitInput = null,
+                pendingDensityPrompt = null,
                 error = null,
             )
         }
@@ -123,6 +133,68 @@ class CookViewModel @Inject constructor(
     fun onIngredientQuantityChange(text: String) {
         _uiState.update { it.copy(ingredientQuantityInput = text, error = null) }
         recompute()
+    }
+
+    /**
+     * Picking a unit outside the recipe line's own category may need density/item-weight data the
+     * ingredient doesn't have yet — [requirementFor] says so, and [pendingDensityPrompt] asks for
+     * it. The unit choice itself always applies immediately; [recompute] surfaces the ordinary
+     * "incompatible unit" error until the prompt (if any) is answered.
+     */
+    fun onIngredientUnitChange(unit: MeasureUnit) {
+        val line = recipe?.ingredients?.firstOrNull { it.id == _uiState.value.ingredientLineId }
+
+        val prompt = if (line != null && line.unit.category != unit.category) {
+            val requirement = requirementFor(line.unit, unit, line.ingredient.toRef())
+            if (requirement != DensityRequirement.NONE && requirement != DensityRequirement.UNSUPPORTED) {
+                DensityPromptRequest(
+                    ingredientId = line.ingredient.id,
+                    ingredientName = line.ingredient.name,
+                    requirement = requirement,
+                    fromUnit = line.unit,
+                    toUnit = unit,
+                )
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+
+        _uiState.update {
+            it.copy(ingredientUnitInput = unit, pendingDensityPrompt = prompt, error = null)
+        }
+        recompute()
+    }
+
+    /** The user just answered the "density unknown" prompt: persist it, then recompute. */
+    fun onDensityPromptConfirm(densityGramsPerMl: Double?, itemWeightGrams: Double?) {
+        val request = _uiState.value.pendingDensityPrompt ?: return
+        viewModelScope.launch {
+            ingredientRepository.setDensityData(request.ingredientId, densityGramsPerMl, itemWeightGrams)
+            recipe = recipe?.let { current ->
+                current.copy(
+                    ingredients = current.ingredients.map { line ->
+                        if (line.ingredient.id != request.ingredientId) {
+                            line
+                        } else {
+                            line.copy(
+                                ingredient = line.ingredient.copy(
+                                    densityGramsPerMl = densityGramsPerMl ?: line.ingredient.densityGramsPerMl,
+                                    itemWeightGrams = itemWeightGrams ?: line.ingredient.itemWeightGrams,
+                                ),
+                            )
+                        }
+                    },
+                )
+            }
+            _uiState.update { it.copy(pendingDensityPrompt = null) }
+            recompute()
+        }
+    }
+
+    fun onDensityPromptDismiss() {
+        _uiState.update { it.copy(pendingDensityPrompt = null) }
     }
 
     fun onPantryAmountChange(lineId: String, text: String) {
@@ -205,8 +277,8 @@ class CookViewModel @Inject constructor(
             CookMode.INGREDIENT -> {
                 val lineId = state.ingredientLineId ?: return null
                 val qty = state.ingredientQuantityInput.parseAmount() ?: return null
-                val unit = recipe?.ingredients?.firstOrNull { it.id == lineId }?.unit ?: return null
-                ScaleConstraint.ByIngredient(lineId, qty, unit)
+                val lineUnit = recipe?.ingredients?.firstOrNull { it.id == lineId }?.unit ?: return null
+                ScaleConstraint.ByIngredient(lineId, qty, state.ingredientUnitInput ?: lineUnit)
             }
 
             CookMode.PANTRY -> {

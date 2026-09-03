@@ -9,4 +9,6 @@ data class IngredientSeed(
     val key: String,
     val defaultUnit: MeasureUnit,
     val category: IngredientCategory,
+    val density: Double? = null,
+    val itemWeightGrams: Double? = null,
 )

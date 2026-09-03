@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.proportion.feature.cook
 
+import com.ilsecondodasinistra.proportion.core.domain.repository.IngredientRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.ScaleVariantRepository
@@ -56,28 +57,34 @@ object CookTestData {
 
     val ovenTag = Tag(id = "tag-oven", key = "oven", name = null, isBuiltIn = true)
 
-    private fun ingredient(name: String, unit: MeasureUnit) =
+    private fun ingredient(name: String, unit: MeasureUnit, densityGramsPerMl: Double? = null) =
         Ingredient(
             id = "ing-${name.lowercase()}", key = null, name = name, normalisedName = name.lowercase(),
-            isBuiltIn = false, defaultUnit = unit,
+            isBuiltIn = false, defaultUnit = unit, densityGramsPerMl = densityGramsPerMl,
         )
 
-    fun line(name: String, qty: Double?, unit: MeasureUnit, position: Int) = RecipeIngredient(
+    fun line(
+        name: String,
+        qty: Double?,
+        unit: MeasureUnit,
+        position: Int,
+        densityGramsPerMl: Double? = null,
+    ) = RecipeIngredient(
         id = "line-${name.lowercase()}",
-        ingredient = ingredient(name, unit),
+        ingredient = ingredient(name, unit, densityGramsPerMl),
         position = position,
         quantity = qty,
         unit = unit,
     )
 
-    /** Serves 4: 300 g flour, 2 eggs, salt to taste. */
+    /** Serves 4: 300 g flour (known density, so it can be fixed in millilitres), 2 eggs, salt to taste. */
     val cake = Recipe(
         id = "r-cake",
         title = "Torta di mele",
         servings = 4,
         steps = listOf("Sbatti le uova.", "Inforna a 180 gradi."),
         ingredients = listOf(
-            line("Farina", 300.0, MeasureUnit.GRAM, 0),
+            line("Farina", 300.0, MeasureUnit.GRAM, 0, densityGramsPerMl = 0.53),
             line("Uova", 2.0, MeasureUnit.EGG, 1),
             line("Sale", null, MeasureUnit.TO_TASTE, 2),
         ),
@@ -130,6 +137,41 @@ class FakeRecipeRepository(initial: List<Recipe>) : RecipeRepository {
         markCookedCalls += 1
     }
     override suspend fun setFavourite(id: String, favourite: Boolean) = Unit
+}
+
+class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : IngredientRepository {
+
+    private val stored = MutableStateFlow(initial)
+    val densityUpdates = mutableListOf<Triple<String, Double?, Double?>>()
+
+    override fun observeAll(): Flow<List<Ingredient>> = stored
+    override fun observeInUse(): Flow<List<Ingredient>> = stored
+
+    override suspend fun findOrCreate(name: String, defaultUnit: MeasureUnit): Ingredient {
+        val normalised = name.trim().lowercase()
+        stored.value.firstOrNull { it.normalisedName == normalised }?.let { return it }
+
+        val created = Ingredient(
+            id = "ing-$normalised", key = null, name = name.trim(), normalisedName = normalised,
+            isBuiltIn = false, defaultUnit = defaultUnit,
+        )
+        stored.value = stored.value + created
+        return created
+    }
+
+    override suspend fun setDensityData(id: String, densityGramsPerMl: Double?, itemWeightGrams: Double?) {
+        densityUpdates += Triple(id, densityGramsPerMl, itemWeightGrams)
+        stored.value = stored.value.map { ingredient ->
+            if (ingredient.id != id) {
+                ingredient
+            } else {
+                ingredient.copy(
+                    densityGramsPerMl = densityGramsPerMl ?: ingredient.densityGramsPerMl,
+                    itemWeightGrams = itemWeightGrams ?: ingredient.itemWeightGrams,
+                )
+            }
+        }
+    }
 }
 
 class FakeScaleVariantRepository : ScaleVariantRepository {

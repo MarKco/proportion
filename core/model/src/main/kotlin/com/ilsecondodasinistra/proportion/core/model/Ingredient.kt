@@ -9,8 +9,11 @@ package com.ilsecondodasinistra.proportion.core.model
  *
  * @param normalisedName lowercase, trimmed and accent-folded; the key used for lookup, filtering
  * and de-duplication on import.
- * @param densityGramsPerMl **v2 preparation, unused in v1.** The column exists from schema version
- * one so that adding mass <-> volume conversion later needs no migration. Do not remove it.
+ * @param densityGramsPerMl grams per millilitre, used to convert this ingredient between MASS and
+ * VOLUME units. Null when unknown (typically a user-created ingredient that has never needed it).
+ * @param itemWeightGrams grams per one [defaultUnit], used to convert a COUNT-category ingredient
+ * (e.g. "1 egg", "1 slice") to and from MASS/VOLUME. Only meaningful when [defaultUnit] is a COUNT
+ * unit; null when unknown.
  */
 data class Ingredient(
     val id: String,
@@ -21,6 +24,7 @@ data class Ingredient(
     val defaultUnit: MeasureUnit = MeasureUnit.GRAM,
     val category: IngredientCategory? = null,
     val densityGramsPerMl: Double? = null,
+    val itemWeightGrams: Double? = null,
 ) {
     init {
         require(isBuiltIn == (key != null)) {

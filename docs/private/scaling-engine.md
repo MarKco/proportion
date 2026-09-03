@@ -24,9 +24,13 @@ four.
 - `COUNT` (piece, egg, clove, slice, leaf, sachet, jar) is **discrete**.
 - `APPROXIMATE` (to taste, pinch, drizzle) **never scales** and never contributes to a factor.
 
-Conversion happens **inside a category only**. Mass ↔ volume is refused rather than guessed: 100 g
-of flour is not 100 ml. `UnitConverter.convert` already takes the ingredient so that v2 can answer
-that question with a density without changing a single call site.
+Conversion crosses categories through the ingredient's own data (phase 9): MASS ↔ VOLUME via
+`Ingredient.densityGramsPerMl`, COUNT ↔ MASS/VOLUME via `Ingredient.itemWeightGrams` (only when the
+COUNT unit is that ingredient's own `defaultUnit` — a clove is not a slice, whatever its weight),
+both chained through grams as the hub for COUNT ↔ VOLUME. With no density known, mass ↔ volume is
+refused rather than guessed: 100 g of flour is not 100 ml. `requirementFor(from, to, ingredient)`
+tells a caller what's missing (density, item weight, both, or nothing an answer would fix) — the UI
+layer uses it to offer a "density unknown" prompt exactly when it would help.
 
 ## Impractical results
 

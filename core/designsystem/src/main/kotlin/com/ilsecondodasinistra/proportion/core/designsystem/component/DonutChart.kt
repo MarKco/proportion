@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,6 +42,10 @@ fun sweepAngles(values: List<Int>): List<Float> {
  * knows nothing about recipes or courses: callers hand it plain slices, keeping this component
  * reusable wherever a proportional breakdown needs a centre label.
  *
+ * [centreCaption], when given, sits inside the ring below [centreLabel] — there isn't room for
+ * more than a couple of words before it collides with the arc itself; a longer caption belongs
+ * next to the chart, not inside it.
+ *
  * The donut animates from nothing on first composition, which is the one place in the app where
  * motion carries meaning: the library filling up.
  */
@@ -48,8 +53,8 @@ fun sweepAngles(values: List<Int>): List<Float> {
 fun DonutChart(
     slices: List<DonutSlice>,
     centreLabel: String,
-    centreCaption: String,
     modifier: Modifier = Modifier,
+    centreCaption: String? = null,
     diameter: Dp = 160.dp,
     thickness: Dp = 22.dp,
 ) {
@@ -83,13 +88,11 @@ fun DonutChart(
                 start += sweep
             }
         }
-        Box(contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = centreLabel, style = MaterialTheme.typography.headlineMedium)
+            centreCaption?.let {
+                Text(text = it, style = MaterialTheme.typography.labelSmall)
+            }
         }
-        Text(
-            text = centreCaption,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
     }
 }

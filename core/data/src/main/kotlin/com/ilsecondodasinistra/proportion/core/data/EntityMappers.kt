@@ -28,6 +28,7 @@ fun IngredientEntity.toDomain(namer: BuiltInIngredientNamer): Ingredient {
         defaultUnit = defaultUnit,
         category = category,
         densityGramsPerMl = densityGramsPerMl,
+        itemWeightGrams = itemWeightGrams,
     )
 }
 
@@ -40,6 +41,7 @@ fun Ingredient.toEntity() = IngredientEntity(
     defaultUnit = defaultUnit,
     category = category,
     densityGramsPerMl = densityGramsPerMl,
+    itemWeightGrams = itemWeightGrams,
 )
 
 fun TagEntity.toDomain() = Tag(

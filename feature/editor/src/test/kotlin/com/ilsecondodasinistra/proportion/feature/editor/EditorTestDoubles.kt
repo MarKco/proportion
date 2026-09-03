@@ -87,6 +87,7 @@ class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : Ingred
 
     private val stored = MutableStateFlow(initial)
     val created = mutableListOf<Ingredient>()
+    val densityUpdates = mutableListOf<Triple<String, Double?, Double?>>()
 
     override fun observeAll(): Flow<List<Ingredient>> = stored
 
@@ -107,6 +108,20 @@ class FakeIngredientRepository(initial: List<Ingredient> = emptyList()) : Ingred
         created += ingredient
         stored.value = stored.value + ingredient
         return ingredient
+    }
+
+    override suspend fun setDensityData(id: String, densityGramsPerMl: Double?, itemWeightGrams: Double?) {
+        densityUpdates += Triple(id, densityGramsPerMl, itemWeightGrams)
+        stored.value = stored.value.map { ingredient ->
+            if (ingredient.id != id) {
+                ingredient
+            } else {
+                ingredient.copy(
+                    densityGramsPerMl = densityGramsPerMl ?: ingredient.densityGramsPerMl,
+                    itemWeightGrams = itemWeightGrams ?: ingredient.itemWeightGrams,
+                )
+            }
+        }
     }
 }
 

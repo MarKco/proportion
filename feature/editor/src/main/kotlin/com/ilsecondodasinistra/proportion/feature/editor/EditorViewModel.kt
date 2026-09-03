@@ -9,6 +9,11 @@ import com.ilsecondodasinistra.proportion.core.domain.IngredientNames
 import com.ilsecondodasinistra.proportion.core.domain.repository.IngredientRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.TagRepository
+import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRequirement
+import com.ilsecondodasinistra.proportion.core.domain.unit.IngredientRef
+import com.ilsecondodasinistra.proportion.core.domain.unit.UnitConverter
+import com.ilsecondodasinistra.proportion.core.domain.unit.requirementFor
+import com.ilsecondodasinistra.proportion.core.domain.unit.toRef
 import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
@@ -37,6 +42,7 @@ class EditorViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val ingredientRepository: IngredientRepository,
     private val tagRepository: TagRepository,
+    private val converter: UnitConverter,
 ) : ViewModel() {
 
     private val editedRecipeId: String? = savedStateHandle.toRoute<EditorRouteKey>().recipeId
@@ -141,13 +147,88 @@ class EditorViewModel @Inject constructor(
         )
     }
 
-    fun onLineUnitChange(index: Int, unit: MeasureUnit) = edit { state ->
+    /**
+     * Switching a line's unit re-expresses its quantity to stay equivalent (3 cups sugar becomes
+     * 300 g), rather than leaving the number unchanged under a new label. When the ingredient
+     * (matched live, by name, against the catalogue) is missing the density/item-weight the
+     * conversion would need, asks for it via [pendingDensityPrompt] instead of silently giving up —
+     * unless the ingredient isn't in the catalogue at all yet (still being typed), in which case
+     * there is nowhere to persist an answer and the quantity is simply left as typed.
+     */
+    fun onLineUnitChange(index: Int, unit: MeasureUnit) {
+        val line = _uiState.value.lines.getOrNull(index) ?: return
+        val ingredient = catalogue.firstOrNull { it.normalisedName == IngredientNames.normalise(line.name) }
+        val qty = line.quantity.parseQuantity()
+
+        if (qty == null || line.unit == unit) {
+            setLineUnit(index, unit)
+            return
+        }
+
+        val converted = converter.convert(qty, line.unit, unit, ingredient?.toRef())
+        if (converted != null) {
+            setLineUnit(index, unit, quantity = converted.toEditableText())
+            return
+        }
+
+        val requirement = requirementFor(line.unit, unit, ingredient?.toRef())
+        val recoverable = requirement != DensityRequirement.NONE && requirement != DensityRequirement.UNSUPPORTED
+        if (ingredient == null || !recoverable) {
+            setLineUnit(index, unit)
+            return
+        }
+
+        edit { state ->
+            state.copy(
+                lines = state.lines.mapIndexed { i, l -> if (i == index) l.copy(unit = unit) else l },
+                pendingDensityPrompt = DensityPromptRequest(
+                    lineIndex = index,
+                    ingredientId = ingredient.id,
+                    ingredientName = ingredient.name,
+                    requirement = requirement,
+                    qty = qty,
+                    fromUnit = line.unit,
+                    toUnit = unit,
+                ),
+            )
+        }
+    }
+
+    private fun setLineUnit(index: Int, unit: MeasureUnit, quantity: String? = null) = edit { state ->
         state.copy(
             lines = state.lines.mapIndexed { i, line ->
-                if (i == index) line.copy(unit = unit) else line
+                if (i == index) line.copy(unit = unit, quantity = quantity ?: line.quantity) else line
             },
         )
     }
+
+    /** The user just answered the "density unknown" prompt: persist it, then retry the conversion. */
+    fun onDensityPromptConfirm(densityGramsPerMl: Double?, itemWeightGrams: Double?) {
+        val request = _uiState.value.pendingDensityPrompt ?: return
+        viewModelScope.launch {
+            ingredientRepository.setDensityData(request.ingredientId, densityGramsPerMl, itemWeightGrams)
+            val ingredient = catalogue.firstOrNull { it.id == request.ingredientId }
+            val ref = (ingredient?.toRef() ?: IngredientRef(id = request.ingredientId, normalisedName = "")).copy(
+                densityGramsPerMl = densityGramsPerMl ?: ingredient?.densityGramsPerMl,
+                itemWeightGrams = itemWeightGrams ?: ingredient?.itemWeightGrams,
+            )
+            val converted = converter.convert(request.qty, request.fromUnit, request.toUnit, ref)
+            edit { state ->
+                state.copy(
+                    lines = state.lines.mapIndexed { i, line ->
+                        if (i == request.lineIndex && converted != null) {
+                            line.copy(quantity = converted.toEditableText())
+                        } else {
+                            line
+                        }
+                    },
+                    pendingDensityPrompt = null,
+                )
+            }
+        }
+    }
+
+    fun onDensityPromptDismiss() = edit { it.copy(pendingDensityPrompt = null) }
 
     fun onAddLine() = edit { state ->
         val newLine = EditorLine(id = newLineId())

@@ -63,10 +63,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionMotion
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
+import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.ui.R as UiR
+import com.ilsecondodasinistra.proportion.core.ui.component.DensityPromptDialog
 import com.ilsecondodasinistra.proportion.core.ui.component.LoadingState
+import com.ilsecondodasinistra.proportion.core.ui.component.UnitPicker
 import com.ilsecondodasinistra.proportion.core.ui.component.WarningAction
 import com.ilsecondodasinistra.proportion.core.ui.component.WarningRow
+import com.ilsecondodasinistra.proportion.core.ui.unitLabel
 import java.util.Locale
 
 @Composable
@@ -105,6 +109,9 @@ fun CookRoute(
         onFactorChange = viewModel::onFactorChange,
         onIngredientSelected = viewModel::onIngredientSelected,
         onIngredientQuantityChange = viewModel::onIngredientQuantityChange,
+        onIngredientUnitChange = viewModel::onIngredientUnitChange,
+        onDensityPromptConfirm = viewModel::onDensityPromptConfirm,
+        onDensityPromptDismiss = viewModel::onDensityPromptDismiss,
         onPantryAmountChange = viewModel::onPantryAmountChange,
         onSnapAccept = { viewModel.onSnapAccept(it) },
         onShowCard = viewModel::onShowCard,
@@ -126,6 +133,9 @@ fun CookScreen(
     onFactorChange: (String) -> Unit,
     onIngredientSelected: (String) -> Unit,
     onIngredientQuantityChange: (String) -> Unit,
+    onIngredientUnitChange: (MeasureUnit) -> Unit,
+    onDensityPromptConfirm: (Double?, Double?) -> Unit,
+    onDensityPromptDismiss: () -> Unit,
     onPantryAmountChange: (String, String) -> Unit,
     onSnapAccept: (com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption) -> Unit,
     onShowCard: (Boolean) -> Unit,
@@ -169,6 +179,7 @@ fun CookScreen(
                 onFactorChange = onFactorChange,
                 onIngredientSelected = onIngredientSelected,
                 onIngredientQuantityChange = onIngredientQuantityChange,
+                onIngredientUnitChange = onIngredientUnitChange,
                 onPantryAmountChange = onPantryAmountChange,
                 onSnapAccept = onSnapAccept,
                 onShowCard = { onShowCard(true) },
@@ -186,6 +197,15 @@ fun CookScreen(
             onConfirm = { label, asDefault -> onSaveVariant(label, asDefault) },
         )
     }
+
+    state.pendingDensityPrompt?.let { prompt ->
+        DensityPromptDialog(
+            ingredientName = prompt.ingredientName,
+            requirement = prompt.requirement,
+            onDismiss = onDensityPromptDismiss,
+            onConfirm = onDensityPromptConfirm,
+        )
+    }
 }
 
 @Composable
@@ -196,6 +216,7 @@ private fun AdjustBody(
     onFactorChange: (String) -> Unit,
     onIngredientSelected: (String) -> Unit,
     onIngredientQuantityChange: (String) -> Unit,
+    onIngredientUnitChange: (MeasureUnit) -> Unit,
     onPantryAmountChange: (String, String) -> Unit,
     onSnapAccept: (com.ilsecondodasinistra.proportion.core.domain.scale.SnapOption) -> Unit,
     onShowCard: () -> Unit,
@@ -220,6 +241,7 @@ private fun AdjustBody(
                 state = state,
                 onIngredientSelected = onIngredientSelected,
                 onQuantityChange = onIngredientQuantityChange,
+                onUnitChange = onIngredientUnitChange,
             )
             CookMode.PANTRY -> PantryInput(state, onPantryAmountChange)
         }
@@ -303,27 +325,30 @@ private fun AdjustBody(
             )
         }
 
-        Row(
+        // Stacked, full-width, rather than three equal columns: "Add to shopping list" and "Save
+        // this scaling" wrap onto three lines at a third of the screen width, worse still at a
+        // large font scale. The primary action (view the card) leads.
+        Column(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Button(
+                onClick = onShowCard,
+                modifier = Modifier.fillMaxWidth().testTag("show_card_button"),
+            ) {
+                Text(stringResource(R.string.cook_show_card))
+            }
             OutlinedButton(
                 onClick = onSaveRequested,
-                modifier = Modifier.weight(1f).testTag("save_variant_button"),
+                modifier = Modifier.fillMaxWidth().testTag("save_variant_button"),
             ) {
                 Text(stringResource(R.string.cook_save_variant))
             }
             OutlinedButton(
                 onClick = onAddToShoppingList,
-                modifier = Modifier.weight(1f).testTag("add_to_shopping_button"),
+                modifier = Modifier.fillMaxWidth().testTag("add_to_shopping_button"),
             ) {
                 Text(stringResource(R.string.cook_add_to_shopping))
-            }
-            Button(
-                onClick = onShowCard,
-                modifier = Modifier.weight(1f).testTag("show_card_button"),
-            ) {
-                Text(stringResource(R.string.cook_show_card))
             }
         }
 
@@ -413,6 +438,7 @@ private fun IngredientConstraintInput(
     state: CookUiState,
     onIngredientSelected: (String) -> Unit,
     onQuantityChange: (String) -> Unit,
+    onUnitChange: (MeasureUnit) -> Unit,
 ) {
     Column {
         Text(
@@ -430,15 +456,28 @@ private fun IngredientConstraintInput(
                 )
             }
         }
-        if (state.ingredientLineId != null) {
-            OutlinedTextField(
-                value = state.ingredientQuantityInput,
-                onValueChange = onQuantityChange,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                label = { Text(stringResource(R.string.cook_pantry_have)) },
-                modifier = Modifier.padding(top = 8.dp).width(180.dp).testTag("constraint_field"),
-            )
+        // The recipe line's own unit, not the (possibly snapped) display unit shown in the list.
+        val lineUnit = state.recipe?.ingredients?.firstOrNull { it.id == state.ingredientLineId }?.unit
+        if (lineUnit != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                OutlinedTextField(
+                    value = state.ingredientQuantityInput,
+                    onValueChange = onQuantityChange,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    label = { Text(stringResource(R.string.cook_pantry_have)) },
+                    modifier = Modifier.width(140.dp).testTag("constraint_field"),
+                )
+                UnitPicker(
+                    selected = state.ingredientUnitInput ?: lineUnit,
+                    unitName = { unit -> unitLabel(unit) },
+                    onSelect = onUnitChange,
+                )
+            }
         }
         FactorCaption(state)
     }

@@ -6,6 +6,10 @@
   language, or left to follow the system.
 - App theme picker in Settings: when colours from the wallpaper are off, choose between four
   built-in themes (Pastel, Vivid, Playful, High contrast), each with a light and a dark variant.
+- Built-in catalogue of 477 ingredients, translated, with autocomplete on entry.
+- Converting an ingredient line between weight, volume and count (including imperial units: oz,
+  lb, fl oz, pint, quart, gallon), both in the recipe itself and while cooking via "by an
+  ingredient".
 
 ## 1.0 — 2026-09-02
 

@@ -15,6 +15,13 @@
     <string name="unit_category_count">Quantità</string>
     <string name="unit_category_approximate">Approssimativo</string>
 
+    <string name="density_prompt_title">Densità sconosciuta</string>
+    <string name="density_prompt_body">%1$s ha bisogno di questo dato per convertire tra peso, volume e quantità. Viene ricordato da ora in poi.</string>
+    <string name="density_prompt_density_label">Densità (g/ml)</string>
+    <string name="density_prompt_item_weight_label">Peso di un\'unità (g)</string>
+    <string name="density_prompt_confirm">Salva</string>
+    <string name="density_prompt_cancel">Annulla</string>
+
     <string name="state_loading">Caricamento</string>
     <string name="state_error_title">Qualcosa è andato storto</string>
     <string name="state_retry">Riprova</string>
@@ -23,12 +30,18 @@
 
     <string name="unit_gram">g</string>
     <string name="unit_kilogram">kg</string>
+    <string name="unit_ounce">oz</string>
+    <string name="unit_pound">lb</string>
     <string name="unit_millilitre">ml</string>
     <string name="unit_litre">l</string>
     <string name="unit_teaspoon">cucchiaino</string>
     <string name="unit_tablespoon">cucchiaio</string>
     <string name="unit_glass">bicchiere</string>
     <string name="unit_cup">tazza</string>
+    <string name="unit_fluid_ounce">oncia fluida</string>
+    <string name="unit_pint">pinta</string>
+    <string name="unit_quart">quarto</string>
+    <string name="unit_gallon">gallone</string>
     <string name="unit_to_taste">q.b.</string>
     <string name="unit_pinch">un pizzico</string>
     <string name="unit_drizzle">un filo</string>

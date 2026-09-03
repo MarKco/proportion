@@ -37,6 +37,12 @@ interface IngredientDao {
     @Upsert
     suspend fun upsertAll(ingredients: List<IngredientEntity>)
 
+    @Query("UPDATE ingredients SET density_g_per_ml = :density WHERE id = :id")
+    suspend fun updateDensity(id: String, density: Double)
+
+    @Query("UPDATE ingredients SET item_weight_grams = :itemWeightGrams WHERE id = :id")
+    suspend fun updateItemWeight(id: String, itemWeightGrams: Double)
+
     @Query("DELETE FROM ingredients WHERE id = :id")
     suspend fun delete(id: String)
 }

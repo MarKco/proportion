@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.proportion.core.domain.scale
 
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
 import com.ilsecondodasinistra.proportion.core.domain.unit.UnitConverter
+import com.ilsecondodasinistra.proportion.core.domain.unit.toRef
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
@@ -58,7 +59,7 @@ class DefaultRecipeScaler(
         val original = line.quantity ?: return ResolvedError(ScaleError.IncompatibleUnit)
         if (original <= 0.0) return ResolvedError(ScaleError.IncompatibleUnit)
 
-        val requested = converter.convert(constraint.qty, constraint.unit, line.unit)
+        val requested = converter.convert(constraint.qty, constraint.unit, line.unit, line.ingredient.toRef())
             ?: return ResolvedError(ScaleError.IncompatibleUnit)
 
         return ResolvedFactor(requested / original)
@@ -81,7 +82,7 @@ class DefaultRecipeScaler(
             val original = line.quantity ?: return@mapNotNull null
             if (original <= 0.0) return@mapNotNull null
 
-            val inLineUnit = converter.convert(available.qty, available.unit, line.unit)
+            val inLineUnit = converter.convert(available.qty, available.unit, line.unit, line.ingredient.toRef())
                 ?: return@mapNotNull null
 
             Candidate(

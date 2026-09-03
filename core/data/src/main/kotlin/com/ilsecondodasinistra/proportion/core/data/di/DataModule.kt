@@ -10,6 +10,7 @@ import com.ilsecondodasinistra.proportion.core.data.repository.ShoppingRepositor
 import com.ilsecondodasinistra.proportion.core.data.repository.TagRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.data.repository.TransferRepositoryImpl
 import com.ilsecondodasinistra.proportion.core.database.Migration1to2
+import com.ilsecondodasinistra.proportion.core.database.Migration2to3
 import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
 import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.RecipeDao
@@ -29,8 +30,6 @@ import com.ilsecondodasinistra.proportion.core.domain.scale.DefaultRecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.scale.DiscreteAnalyser
 import com.ilsecondodasinistra.proportion.core.domain.scale.RecipeScaler
 import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
-import com.ilsecondodasinistra.proportion.core.domain.unit.DensityRepository
-import com.ilsecondodasinistra.proportion.core.domain.unit.NoDensityRepository
 import com.ilsecondodasinistra.proportion.core.domain.unit.QuantityFormatter
 import com.ilsecondodasinistra.proportion.core.domain.unit.UnitConverter
 import com.ilsecondodasinistra.proportion.core.domain.unit.UnitNamer
@@ -51,7 +50,7 @@ object DataModule {
     @Singleton
     fun database(@ApplicationContext context: Context): ProPortionDatabase =
         Room.databaseBuilder(context, ProPortionDatabase::class.java, ProPortionDatabase.NAME)
-            .addMigrations(Migration1to2(context))
+            .addMigrations(Migration1to2(context), Migration2to3(context))
             .addCallback(ProPortionDatabase.seedCallback(context))
             .build()
 
@@ -76,11 +75,6 @@ object DataModule {
     @Provides
     @Singleton
     fun unitConverter(): UnitConverter = DefaultUnitConverter()
-
-    /** v2 swaps this single provider for a density-backed one. Nothing else changes. */
-    @Provides
-    @Singleton
-    fun densityRepository(): DensityRepository = NoDensityRepository()
 
     @Provides
     @Singleton
