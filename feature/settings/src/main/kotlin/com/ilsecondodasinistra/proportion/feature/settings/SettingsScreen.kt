@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.proportion.feature.settings
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -45,9 +46,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.proportion.core.model.AppTheme
+import com.ilsecondodasinistra.proportion.core.model.SyncLogEntry
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.ImportMode
 import com.ilsecondodasinistra.proportion.core.transfer.ProportionFile
+import com.ilsecondodasinistra.proportion.core.ui.RecipeSharing
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -78,6 +84,20 @@ fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel()) {
         }
     }
 
+    val chooseSyncFolder = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.onSyncFolderChosen(uri.toString())
+        }
+    }
+
+    val syncShareLogTitle = stringResource(R.string.settings_sync_share_log_title)
+
     LaunchedEffect(state.backupSaved) {
         if (state.backupSaved) {
             snackbarHostState.showSnackbar(backupSavedMessage)
@@ -104,7 +124,21 @@ fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel()) {
         onReplaceRequested = viewModel::onReplaceRequested,
         onReplaceConfirmed = { viewModel.onRestoreConfirmed(ImportMode.REPLACE_ALL) },
         onDismissRestore = viewModel::onRestoreDismissed,
+        onSyncEnabledChange = viewModel::onSyncEnabledChange,
+        onChooseFolderClick = { chooseSyncFolder.launch(null) },
+        onSyncNowClick = viewModel::onSyncNowClick,
+        onShareLogClick = {
+            RecipeSharing.shareText(context, formatSyncLog(state.syncLog), syncShareLogTitle)
+        },
     )
+}
+
+private fun formatSyncLog(log: List<SyncLogEntry>): String {
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    return log.joinToString("\n") { entry ->
+        val tag = if (entry.isError) "[ERRORE]" else "[OK]"
+        "${formatter.format(Date(entry.timestamp))} $tag ${entry.message}"
+    }
 }
 
 /** Read on IO: a backup can be large, and this runs from a picker callback on the main thread. */
@@ -128,6 +162,10 @@ fun SettingsScreen(
     onReplaceRequested: () -> Unit,
     onReplaceConfirmed: () -> Unit,
     onDismissRestore: () -> Unit,
+    onSyncEnabledChange: (Boolean) -> Unit,
+    onChooseFolderClick: () -> Unit,
+    onSyncNowClick: () -> Unit,
+    onShareLogClick: () -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.testTag("settings_screen"),
@@ -285,6 +323,15 @@ fun SettingsScreen(
             )
 
             HorizontalDivider()
+            SyncSection(
+                state = state,
+                onSyncEnabledChange = onSyncEnabledChange,
+                onChooseFolderClick = onChooseFolderClick,
+                onSyncNowClick = onSyncNowClick,
+                onShareLogClick = onShareLogClick,
+            )
+
+            HorizontalDivider()
             SectionTitle(stringResource(R.string.settings_about))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_about_author)) },
@@ -313,7 +360,7 @@ private fun appVersion(): String {
 }
 
 @Composable
-private fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,

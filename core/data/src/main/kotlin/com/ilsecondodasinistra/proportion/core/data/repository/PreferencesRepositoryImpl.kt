@@ -19,4 +19,8 @@ class PreferencesRepositoryImpl @Inject constructor(
     override suspend fun setDynamicColour(enabled: Boolean) = dataSource.setDynamicColour(enabled)
 
     override suspend fun setAppTheme(theme: AppTheme) = dataSource.setAppTheme(theme)
+
+    override suspend fun setSyncEnabled(enabled: Boolean) = dataSource.setSyncEnabled(enabled)
+
+    override suspend fun setSyncFolderUri(uri: String?) = dataSource.setSyncFolderUri(uri)
 }

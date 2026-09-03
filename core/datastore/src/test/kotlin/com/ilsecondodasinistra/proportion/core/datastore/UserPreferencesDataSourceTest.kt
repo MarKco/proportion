@@ -55,4 +55,30 @@ class UserPreferencesDataSourceTest {
 
         assertThat(dataSource.preferences.first().appTheme).isEqualTo(AppTheme.HIGH_CONTRAST)
     }
+
+    @Test
+    fun `sync is off with no folder chosen by default`() = runTest {
+        val prefs = dataSource.preferences.first()
+
+        assertThat(prefs.syncEnabled).isFalse()
+        assertThat(prefs.syncFolderUri).isNull()
+    }
+
+    @Test
+    fun `enabling sync and choosing a folder both survive a read back`() = runTest {
+        dataSource.setSyncEnabled(true)
+        dataSource.setSyncFolderUri("content://com.android.externalstorage.documents/tree/primary")
+
+        val prefs = dataSource.preferences.first()
+        assertThat(prefs.syncEnabled).isTrue()
+        assertThat(prefs.syncFolderUri).isEqualTo("content://com.android.externalstorage.documents/tree/primary")
+    }
+
+    @Test
+    fun `clearing the folder uri removes it rather than storing an empty string`() = runTest {
+        dataSource.setSyncFolderUri("content://some/tree")
+        dataSource.setSyncFolderUri(null)
+
+        assertThat(dataSource.preferences.first().syncFolderUri).isNull()
+    }
 }

@@ -9,8 +9,10 @@ import com.ilsecondodasinistra.proportion.core.domain.IngredientNames
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncRepository
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
@@ -22,6 +24,9 @@ class RecipeRepositoryImpl @Inject constructor(
     private val ingredientDao: IngredientDao,
     private val namer: BuiltInIngredientNamer,
     private val time: TimeProvider,
+    // Provider, not a direct SyncRepository: SyncRepositoryImpl reaches TransferRepositoryImpl,
+    // which depends on RecipeRepository — a direct edge here would be a Dagger dependency cycle.
+    private val sync: Provider<SyncRepository>,
 ) : RecipeRepository {
 
     override fun observeRecipes(filter: RecipeFilter): Flow<List<Recipe>> = flow {
@@ -81,10 +86,14 @@ class RecipeRepositoryImpl @Inject constructor(
             },
             tagIds = stamped.tags.map { it.id },
         )
+        sync.get().exportRecipe(stamped.id)
         return stamped.id
     }
 
-    override suspend fun delete(id: String) = recipeDao.deleteRecipe(id)
+    override suspend fun delete(id: String) {
+        recipeDao.softDeleteRecipe(id, time.now())
+        sync.get().exportRecipe(id)
+    }
 
     override suspend fun markCooked(id: String, at: Long) = recipeDao.markCooked(id, at)
 

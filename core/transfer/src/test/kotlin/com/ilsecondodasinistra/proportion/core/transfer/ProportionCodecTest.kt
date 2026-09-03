@@ -178,4 +178,77 @@ class ProportionCodecTest {
 
         assertThat((ProportionCodec.decode(text) as DecodeResult.Success).recipes).isEmpty()
     }
+
+    @Test
+    fun `a live recipe round-trips with no tombstone`() {
+        assertThat(roundTrip(cake).deletedAt).isNull()
+    }
+
+    @Test
+    fun `a deleted recipe's tombstone survives the round trip`() {
+        val deleted = cake.copy(deletedAt = 12_345L)
+
+        assertThat(roundTrip(deleted).deletedAt).isEqualTo(12_345L)
+    }
+
+    @Test
+    fun `updatedAt and createdAt survive the round trip`() {
+        val stamped = cake.copy(updatedAt = 999L, createdAt = 111L)
+
+        val wire = roundTrip(stamped)
+
+        assertThat(wire.updatedAt).isEqualTo(999L)
+        assertThat(wire.createdAt).isEqualTo(111L)
+    }
+
+    @Test
+    fun `an ingredient catalogue entry survives export and import`() {
+        val entry = WireIngredientEntry(
+            id = "ing-1",
+            name = "Farina 00",
+            normalisedName = "farina 00",
+            defaultUnit = "GRAM",
+            category = "FLOUR_AND_GRAIN",
+            densityGramsPerMl = 0.55,
+            itemWeightGrams = null,
+            updatedAt = 1_000L,
+        )
+
+        val decoded = ProportionCodec.decodeIngredientEntry(ProportionCodec.encodeIngredientEntry(entry))
+
+        assertThat(decoded).isEqualTo(entry)
+    }
+
+    @Test
+    fun `an ingredient entry with every nullable field absent still round-trips`() {
+        val entry = WireIngredientEntry(
+            id = "ing-2",
+            name = "La mia spezia",
+            normalisedName = "la mia spezia",
+            defaultUnit = "GRAM",
+        )
+
+        val decoded = ProportionCodec.decodeIngredientEntry(ProportionCodec.encodeIngredientEntry(entry))
+
+        assertThat(decoded).isEqualTo(entry)
+    }
+
+    @Test
+    fun `a malformed ingredient entry decodes to null rather than crashing`() {
+        assertThat(ProportionCodec.decodeIngredientEntry("not json")).isNull()
+    }
+
+    @Test
+    fun `a tag catalogue entry survives export and import`() {
+        val entry = WireTagEntry(id = "tag-1", name = "Ricette di famiglia", colorIndex = 2, updatedAt = 2_000L)
+
+        val decoded = ProportionCodec.decodeTagEntry(ProportionCodec.encodeTagEntry(entry))
+
+        assertThat(decoded).isEqualTo(entry)
+    }
+
+    @Test
+    fun `a malformed tag entry decodes to null rather than crashing`() {
+        assertThat(ProportionCodec.decodeTagEntry("not json")).isNull()
+    }
 }

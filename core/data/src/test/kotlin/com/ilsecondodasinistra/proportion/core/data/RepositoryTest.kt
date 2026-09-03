@@ -12,13 +12,19 @@ import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
 import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.repository.RecipeFilter
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncResult
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaleConstraint
 import com.ilsecondodasinistra.proportion.core.domain.scale.ScaledLine
 import com.ilsecondodasinistra.proportion.core.domain.unit.DefaultUnitConverter
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
+import com.ilsecondodasinistra.proportion.core.model.SyncLogEntry
+import javax.inject.Provider
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.After
@@ -26,6 +32,18 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+
+/** RecipeRepositoryImpl/IngredientRepositoryImpl/TagRepositoryImpl only need `.get()`; this repo
+ * test is not about sync, so every call is a no-op. */
+private val noopSync = Provider<SyncRepository> {
+    object : SyncRepository {
+        override suspend fun exportRecipe(recipeId: String) = Unit
+        override suspend fun exportIngredient(ingredientId: String) = Unit
+        override suspend fun exportTag(tagId: String) = Unit
+        override suspend fun syncNow(): SyncResult = SyncResult(0, 0, 0, 0)
+        override fun observeLog(): Flow<List<SyncLogEntry>> = flowOf(emptyList())
+    }
+}
 
 @RunWith(RobolectricTestRunner::class)
 class RepositoryTest {
@@ -51,9 +69,9 @@ class RepositoryTest {
             .allowMainThreadQueries()
             .build()
 
-        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), namer, time)
-        ingredients = IngredientRepositoryImpl(db.ingredientDao(), namer)
-        tags = TagRepositoryImpl(db.tagDao())
+        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), namer, time, noopSync)
+        ingredients = IngredientRepositoryImpl(db.ingredientDao(), namer, time, noopSync)
+        tags = TagRepositoryImpl(db.tagDao(), time, noopSync)
         variants = ScaleVariantRepositoryImpl(db.scaleVariantDao(), json, time)
         shopping = ShoppingRepositoryImpl(db.shoppingDao(), db.ingredientDao(), namer, DefaultUnitConverter())
     }
@@ -248,6 +266,19 @@ class RepositoryTest {
         // Count only user-created rows: the catalogue also carries the seeded built-in ingredients.
         assertThat(ingredients.observeAll().first().count { !it.isBuiltIn }).isEqualTo(2)
         assertThat(ingredients.observeInUse().first()).isEmpty()
+    }
+
+    @Test
+    fun `deleting a recipe sets a tombstone rather than removing the row`() = runTest {
+        storeCake()
+
+        recipes.delete("r-1")
+
+        // Invisible everywhere the UI reads from...
+        assertThat(recipes.observeRecipe("r-1").first()).isNull()
+        assertThat(recipes.observeRecipeCount().first()).isEqualTo(0)
+        // ...but the row itself is still there for sync to find and export as a tombstone.
+        assertThat(db.recipeDao().existingIds(listOf("r-1"))).containsExactly("r-1")
     }
 
     @Test

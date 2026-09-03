@@ -195,7 +195,7 @@ class RecipeDaoTest {
     fun `deleting a recipe cascades to its lines but keeps the ingredients`() = runTest {
         seedCake()
 
-        recipeDao.deleteRecipe("r-cake")
+        recipeDao.hardDeleteRecipe("r-cake")
 
         assertThat(recipeDao.observeAll().first()).isEmpty()
         assertThat(recipeDao.countLines()).isEqualTo(0)

@@ -97,8 +97,37 @@ object ProportionCodec {
         },
         steps = steps,
         notes = notes,
+        deletedAt = deletedAt,
+        updatedAt = updatedAt,
+        createdAt = createdAt,
     )
 
     private fun Tag.toWireTag(): String =
         key?.let { "${ProportionFile.BUILT_IN_TAG_PREFIX}$it" } ?: name.orEmpty()
+
+    /**
+     * Folder sync (phase 10) only, below this line: encode/decode for a single catalogue entry
+     * file (`ingredient-<id>.proportion` / `tag-<id>.proportion`). A malformed file — corrupt,
+     * truncated, or written by something else entirely — decodes to `null` rather than throwing;
+     * the caller (the sync log, see `:core:sync`) is what turns that into something the user sees.
+     */
+    fun encodeIngredientEntry(entry: WireIngredientEntry): String = json.encodeToString(entry)
+
+    fun decodeIngredientEntry(text: String): WireIngredientEntry? = try {
+        json.decodeFromString<WireIngredientEntry>(text)
+    } catch (ignored: SerializationException) {
+        null
+    } catch (ignored: IllegalArgumentException) {
+        null
+    }
+
+    fun encodeTagEntry(entry: WireTagEntry): String = json.encodeToString(entry)
+
+    fun decodeTagEntry(text: String): WireTagEntry? = try {
+        json.decodeFromString<WireTagEntry>(text)
+    } catch (ignored: SerializationException) {
+        null
+    } catch (ignored: IllegalArgumentException) {
+        null
+    }
 }

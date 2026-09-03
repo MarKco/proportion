@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.proportion.core.transfer
 
+import com.ilsecondodasinistra.proportion.core.model.Recipe
+
 /**
  * Moves recipes in and out of the app.
  *
@@ -15,6 +17,24 @@ interface TransferRepository {
 
     /** Null when the recipe no longer exists. */
     suspend fun exportRecipe(recipeId: String): String?
+
+    /**
+     * Folder sync (phase 10) only. Null when the ingredient no longer exists, or is built-in —
+     * built-ins are seeded identically on every install and never need to travel.
+     */
+    suspend fun exportIngredient(ingredientId: String): String?
+
+    /** Folder sync (phase 10) only. Null when the tag no longer exists, or is built-in. */
+    suspend fun exportTag(tagId: String): String?
+
+    /**
+     * Folder sync (phase 10) only: decodes a single-recipe `.proportion` file into a fully
+     * resolved [Recipe] — ingredients and tags matched against the catalogue exactly as [import]
+     * would, `updatedAt`/`deletedAt`/`createdAt` carried through untouched — without writing
+     * anything. `null` on a malformed file, an empty one, or one carrying more than one recipe (a
+     * sync file only ever holds one).
+     */
+    suspend fun resolveRecipe(text: String): Recipe?
 
     suspend fun preview(text: String): ImportPreview
 

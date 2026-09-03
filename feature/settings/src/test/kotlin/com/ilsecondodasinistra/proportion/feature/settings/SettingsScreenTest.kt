@@ -52,6 +52,10 @@ class SettingsScreenTest {
                     onReplaceRequested = {},
                     onReplaceConfirmed = {},
                     onDismissRestore = {},
+                    onSyncEnabledChange = {},
+                    onChooseFolderClick = {},
+                    onSyncNowClick = {},
+                    onShareLogClick = {},
                 )
             }
         }

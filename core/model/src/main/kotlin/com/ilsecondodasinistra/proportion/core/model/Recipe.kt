@@ -19,4 +19,6 @@ data class Recipe(
     val lastCookedAt: Long? = null,
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L,
+    /** Soft-delete tombstone, set instead of removing the row — see phase 10 (folder sync). */
+    val deletedAt: Long? = null,
 )

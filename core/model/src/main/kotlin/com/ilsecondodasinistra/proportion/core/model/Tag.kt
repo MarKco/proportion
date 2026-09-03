@@ -13,6 +13,12 @@ data class Tag(
     val name: String?,
     val isBuiltIn: Boolean,
     val colorIndex: Int = 0,
+    /**
+     * Only meaningful for a literal (non built-in) tag — built-ins are seeded identically
+     * everywhere and never sync. Used by folder sync (phase 10) to resolve a conflict between two
+     * devices in favour of the more recent write.
+     */
+    val updatedAt: Long = 0L,
 ) {
     init {
         require((key == null) != (name == null)) {

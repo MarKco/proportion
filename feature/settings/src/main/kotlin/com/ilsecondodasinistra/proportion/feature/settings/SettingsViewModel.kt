@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.proportion.core.data.PendingImport
 import com.ilsecondodasinistra.proportion.core.domain.LocaleController
+import com.ilsecondodasinistra.proportion.core.domain.SyncScheduler
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncRepository
 import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
@@ -30,6 +32,8 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val transferRepository: TransferRepository,
+    private val syncRepository: SyncRepository,
+    private val syncScheduler: SyncScheduler,
     private val pendingImport: PendingImport,
     private val localeController: LocaleController,
 ) : ViewModel() {
@@ -59,9 +63,15 @@ class SettingsViewModel @Inject constructor(
                         themeMode = preferences.themeMode,
                         useDynamicColour = preferences.useDynamicColour,
                         appTheme = preferences.appTheme,
+                        syncEnabled = preferences.syncEnabled,
+                        syncFolderUri = preferences.syncFolderUri,
                     )
                 }
             }
+        }
+
+        viewModelScope.launch {
+            syncRepository.observeLog().collect { log -> _uiState.update { it.copy(syncLog = log) } }
         }
     }
 
@@ -146,5 +156,39 @@ class SettingsViewModel @Inject constructor(
     fun onRestoreDismissed() {
         pendingText = null
         _uiState.update { it.copy(restore = RestoreStep.Idle) }
+    }
+
+    /**
+     * Turning sync on without a folder chosen yet is allowed — the toggle and the folder picker
+     * are two separate controls, and [onSyncFolderChosen] runs its own sync right after anyway.
+     */
+    fun onSyncEnabledChange(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setSyncEnabled(enabled)
+            if (enabled) {
+                syncScheduler.schedule()
+                if (_uiState.value.syncFolderUri != null) runSyncNow()
+            } else {
+                syncScheduler.cancel()
+            }
+        }
+    }
+
+    /** Runs a sync immediately rather than waiting up to 4h for the next periodic pass. */
+    fun onSyncFolderChosen(uri: String) {
+        viewModelScope.launch {
+            preferencesRepository.setSyncFolderUri(uri)
+            runSyncNow()
+        }
+    }
+
+    fun onSyncNowClick() {
+        viewModelScope.launch { runSyncNow() }
+    }
+
+    private suspend fun runSyncNow() {
+        _uiState.update { it.copy(syncInProgress = true) }
+        val result = syncRepository.syncNow()
+        _uiState.update { it.copy(syncInProgress = false, syncLastResult = result) }
     }
 }

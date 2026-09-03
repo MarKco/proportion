@@ -33,7 +33,7 @@ import kotlinx.serialization.json.decodeFromStream
         ScaleVariantEntity::class,
         ShoppingItemEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -141,5 +141,25 @@ class Migration2to3(private val context: Context) : Migration(SCHEMA_2, SCHEMA_3
     private companion object {
         const val SCHEMA_2 = 2
         const val SCHEMA_3 = 3
+    }
+}
+
+/**
+ * Adds what phase 10 (folder sync) needs: a soft-delete tombstone on recipes (a hard `DELETE`
+ * would give the other device no way to tell "never existed" from "deleted after they last
+ * synced"), and an `updated_at` on the literal (non built-in) catalogue rows so a sync conflict
+ * can be resolved by recency. Built-in rows are seeded identically on every install and never
+ * sync, so they get the column but never a meaningful value in it.
+ */
+class Migration3to4 : Migration(SCHEMA_3, SCHEMA_4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipes ADD COLUMN deleted_at INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE ingredients ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE tags ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0")
+    }
+
+    private companion object {
+        const val SCHEMA_3 = 3
+        const val SCHEMA_4 = 4
     }
 }

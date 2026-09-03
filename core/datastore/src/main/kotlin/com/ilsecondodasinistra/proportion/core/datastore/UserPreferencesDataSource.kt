@@ -33,6 +33,8 @@ class UserPreferencesDataSource @Inject constructor(
             appTheme = stored[APP_THEME]
                 ?.let { runCatching { AppTheme.valueOf(it) }.getOrNull() }
                 ?: AppTheme.PASTEL,
+            syncEnabled = stored[SYNC_ENABLED] ?: false,
+            syncFolderUri = stored[SYNC_FOLDER_URI],
         )
     }
 
@@ -48,9 +50,22 @@ class UserPreferencesDataSource @Inject constructor(
         store.edit { it[APP_THEME] = theme.name }
     }
 
+    suspend fun setSyncEnabled(enabled: Boolean) {
+        store.edit { it[SYNC_ENABLED] = enabled }
+    }
+
+    /** Null clears the choice — the folder picker was cancelled, or the user turned sync off. */
+    suspend fun setSyncFolderUri(uri: String?) {
+        store.edit {
+            if (uri == null) it.remove(SYNC_FOLDER_URI) else it[SYNC_FOLDER_URI] = uri
+        }
+    }
+
     private companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOUR = booleanPreferencesKey("dynamic_colour")
         val APP_THEME = stringPreferencesKey("app_theme")
+        val SYNC_ENABLED = booleanPreferencesKey("sync_enabled")
+        val SYNC_FOLDER_URI = stringPreferencesKey("sync_folder_uri")
     }
 }

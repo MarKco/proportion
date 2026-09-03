@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:name=".ProPortionApplication"
@@ -10,6 +11,20 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ProPortion">
+
+        <!-- ProPortionApplication implements Configuration.Provider (folder sync's WorkManager
+             job needs a Hilt-aware worker factory) — the default, DI-less WorkManager init via
+             this provider must be removed or WorkManager throws at startup. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <!-- adjustResize, not the system default: without it the window is *panned* up when the
              keyboard opens, which shifts every window coordinate while the scroll state stays put.

@@ -301,6 +301,12 @@ class FakeTransferRepository(private val recipes: List<Recipe>) : TransferReposi
     override suspend fun exportRecipe(recipeId: String): String? =
         recipes.firstOrNull { it.id == recipeId }?.let { ProportionCodec.encode(listOf(it)) }
 
+    override suspend fun exportIngredient(ingredientId: String): String? = null
+
+    override suspend fun exportTag(tagId: String): String? = null
+
+    override suspend fun resolveRecipe(text: String): Recipe? = null
+
     override suspend fun preview(text: String): ImportPreview =
         when (val decoded = ProportionCodec.decode(text)) {
             is DecodeResult.Failure -> ImportPreview.Invalid(decoded.reason)

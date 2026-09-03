@@ -15,6 +15,13 @@ interface TagDao {
     @Query("SELECT * FROM tags WHERE key = :key LIMIT 1")
     suspend fun findByKey(key: String): TagEntity?
 
+    @Query("SELECT * FROM tags WHERE id = :id LIMIT 1")
+    suspend fun findById(id: String): TagEntity?
+
+    /** Folder sync (phase 10) only: literal rows are what travels — built-ins never do. */
+    @Query("SELECT id FROM tags WHERE is_built_in = 0")
+    suspend fun allLiteralIds(): List<String>
+
     @Upsert
     suspend fun upsert(tag: TagEntity)
 

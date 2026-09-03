@@ -22,7 +22,9 @@ import com.ilsecondodasinistra.proportion.core.transfer.ProportionCodec
 import com.ilsecondodasinistra.proportion.core.transfer.ProportionFile
 import com.ilsecondodasinistra.proportion.core.transfer.TransferRepository
 import com.ilsecondodasinistra.proportion.core.transfer.WireIngredient
+import com.ilsecondodasinistra.proportion.core.transfer.WireIngredientEntry
 import com.ilsecondodasinistra.proportion.core.transfer.WireRecipe
+import com.ilsecondodasinistra.proportion.core.transfer.WireTagEntry
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
@@ -48,9 +50,52 @@ class TransferRepositoryImpl @Inject constructor(
     override suspend fun exportAll(): String =
         ProportionCodec.encode(recipeRepository.observeRecipes().first(), exportedAt = stamp())
 
+    /**
+     * Reads through [recipeDao] directly, not [recipeRepository]: the latter's queries hide a
+     * soft-deleted recipe from the UI on purpose, but folder sync (phase 10) exports exactly that
+     * recipe as a tombstone file when it is called right after a delete.
+     */
     override suspend fun exportRecipe(recipeId: String): String? {
-        val recipe = recipeRepository.observeRecipe(recipeId).first() ?: return null
+        val recipe = recipeDao.findByIdIncludingDeleted(recipeId)?.toDomain(namer) ?: return null
         return ProportionCodec.encode(listOf(recipe), exportedAt = stamp())
+    }
+
+    override suspend fun exportIngredient(ingredientId: String): String? {
+        val entity = ingredientDao.findById(ingredientId) ?: return null
+        if (entity.isBuiltIn) return null
+        return ProportionCodec.encodeIngredientEntry(
+            WireIngredientEntry(
+                id = entity.id,
+                name = entity.name,
+                normalisedName = entity.normalisedName,
+                defaultUnit = entity.defaultUnit.name,
+                category = entity.category?.name,
+                densityGramsPerMl = entity.densityGramsPerMl,
+                itemWeightGrams = entity.itemWeightGrams,
+                updatedAt = entity.updatedAt,
+            ),
+        )
+    }
+
+    override suspend fun exportTag(tagId: String): String? {
+        val entity = tagDao.findById(tagId) ?: return null
+        if (entity.isBuiltIn) return null
+        return ProportionCodec.encodeTagEntry(
+            WireTagEntry(
+                id = entity.id,
+                name = entity.name.orEmpty(),
+                colorIndex = entity.colorIndex,
+                updatedAt = entity.updatedAt,
+            ),
+        )
+    }
+
+    override suspend fun resolveRecipe(text: String): Recipe? {
+        val wire = when (val result = ProportionCodec.decode(text)) {
+            is DecodeResult.Failure -> return null
+            is DecodeResult.Success -> result.recipes.singleOrNull() ?: return null
+        }
+        return wire.toRecipe()
     }
 
     override suspend fun preview(text: String): ImportPreview =
@@ -119,6 +164,9 @@ class TransferRepositoryImpl @Inject constructor(
             ingredients = lines,
             tags = tags.mapNotNull { resolveTag(it) },
             notes = notes,
+            deletedAt = deletedAt,
+            updatedAt = updatedAt,
+            createdAt = createdAt,
         )
     }
 

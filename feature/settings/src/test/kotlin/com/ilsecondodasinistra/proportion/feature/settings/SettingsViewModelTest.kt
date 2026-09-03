@@ -4,8 +4,13 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.data.PendingImport
 import com.ilsecondodasinistra.proportion.core.domain.LocaleController
+import com.ilsecondodasinistra.proportion.core.domain.SyncScheduler
 import com.ilsecondodasinistra.proportion.core.domain.repository.PreferencesRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncResult
 import com.ilsecondodasinistra.proportion.core.model.AppTheme
+import com.ilsecondodasinistra.proportion.core.model.Recipe
+import com.ilsecondodasinistra.proportion.core.model.SyncLogEntry
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.model.UserPreferences
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
@@ -48,6 +53,12 @@ private class FakePreferencesRepository : PreferencesRepository {
     override suspend fun setAppTheme(theme: AppTheme) {
         preferences.value = preferences.value.copy(appTheme = theme)
     }
+    override suspend fun setSyncEnabled(enabled: Boolean) {
+        preferences.value = preferences.value.copy(syncEnabled = enabled)
+    }
+    override suspend fun setSyncFolderUri(uri: String?) {
+        preferences.value = preferences.value.copy(syncFolderUri = uri)
+    }
 }
 
 private class FakeLocaleController(private var tag: String? = null) : LocaleController {
@@ -72,11 +83,44 @@ private class FakeTransferRepository(
 
     override suspend fun exportRecipe(recipeId: String): String = exportAll()
 
+    override suspend fun exportIngredient(ingredientId: String): String? = null
+
+    override suspend fun exportTag(tagId: String): String? = null
+
+    override suspend fun resolveRecipe(text: String): Recipe? = null
+
     override suspend fun preview(text: String): ImportPreview = preview
 
     override suspend fun import(text: String, mode: ImportMode): ImportOutcome {
         importedModes += mode
         return outcome
+    }
+}
+
+private class FakeSyncRepository(var result: SyncResult = SyncResult(0, 0, 0, 0)) : SyncRepository {
+    val log = MutableStateFlow<List<SyncLogEntry>>(emptyList())
+    var syncNowCalls = 0
+        private set
+
+    override suspend fun exportRecipe(recipeId: String) = Unit
+    override suspend fun exportIngredient(ingredientId: String) = Unit
+    override suspend fun exportTag(tagId: String) = Unit
+    override suspend fun syncNow(): SyncResult {
+        syncNowCalls++
+        return result
+    }
+    override fun observeLog(): Flow<List<SyncLogEntry>> = log
+}
+
+private class FakeSyncScheduler : SyncScheduler {
+    var scheduled = false
+        private set
+
+    override fun schedule() {
+        scheduled = true
+    }
+    override fun cancel() {
+        scheduled = false
     }
 }
 
@@ -88,11 +132,14 @@ class SettingsViewModelTest {
 
     private val preferences = FakePreferencesRepository()
     private val transfer = FakeTransferRepository()
+    private val sync = FakeSyncRepository()
+    private val syncScheduler = FakeSyncScheduler()
     private val localeController = FakeLocaleController()
 
     private val pendingImport = PendingImport()
 
-    private fun viewModel() = SettingsViewModel(preferences, transfer, pendingImport, localeController)
+    private fun viewModel() =
+        SettingsViewModel(preferences, transfer, sync, syncScheduler, pendingImport, localeController)
 
     @Test
     fun `the current preferences are shown`() = runTest {

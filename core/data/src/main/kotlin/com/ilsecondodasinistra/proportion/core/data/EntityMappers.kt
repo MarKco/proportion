@@ -29,6 +29,7 @@ fun IngredientEntity.toDomain(namer: BuiltInIngredientNamer): Ingredient {
         category = category,
         densityGramsPerMl = densityGramsPerMl,
         itemWeightGrams = itemWeightGrams,
+        updatedAt = updatedAt,
     )
 }
 
@@ -42,6 +43,7 @@ fun Ingredient.toEntity() = IngredientEntity(
     category = category,
     densityGramsPerMl = densityGramsPerMl,
     itemWeightGrams = itemWeightGrams,
+    updatedAt = updatedAt,
 )
 
 fun TagEntity.toDomain() = Tag(
@@ -50,6 +52,7 @@ fun TagEntity.toDomain() = Tag(
     name = name,
     isBuiltIn = isBuiltIn,
     colorIndex = colorIndex,
+    updatedAt = updatedAt,
 )
 
 fun Tag.toEntity() = TagEntity(
@@ -58,6 +61,7 @@ fun Tag.toEntity() = TagEntity(
     name = name,
     isBuiltIn = isBuiltIn,
     colorIndex = colorIndex,
+    updatedAt = updatedAt,
 )
 
 fun LineWithIngredient.toDomain(namer: BuiltInIngredientNamer) = RecipeIngredient(
@@ -94,6 +98,7 @@ fun RecipeWithRelations.toDomain(namer: BuiltInIngredientNamer) = Recipe(
     lastCookedAt = recipe.lastCookedAt,
     createdAt = recipe.createdAt,
     updatedAt = recipe.updatedAt,
+    deletedAt = recipe.deletedAt,
 )
 
 fun Recipe.toEntity() = RecipeEntity(
@@ -107,6 +112,7 @@ fun Recipe.toEntity() = RecipeEntity(
     lastCookedAt = lastCookedAt,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    deletedAt = deletedAt,
 )
 
 fun ScaleVariantEntity.toDomain() = ScaleVariant(

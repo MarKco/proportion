@@ -8,4 +8,8 @@ data class UserPreferences(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val useDynamicColour: Boolean = true,
     val appTheme: AppTheme = AppTheme.PASTEL,
+    /** Folder sync (phase 10): off by default, and meaningless without [syncFolderUri]. */
+    val syncEnabled: Boolean = false,
+    /** The SAF tree URI the user picked as the Syncthing-watched folder, as a string. */
+    val syncFolderUri: String? = null,
 )

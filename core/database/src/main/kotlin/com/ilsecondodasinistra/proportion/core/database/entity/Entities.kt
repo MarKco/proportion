@@ -20,6 +20,7 @@ data class RecipeEntity(
     @ColumnInfo(name = "last_cooked_at") val lastCookedAt: Long? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long = 0L,
     @ColumnInfo(name = "updated_at") val updatedAt: Long = 0L,
+    @ColumnInfo(name = "deleted_at") val deletedAt: Long? = null,
 )
 
 @Entity(
@@ -36,6 +37,7 @@ data class IngredientEntity(
     val category: IngredientCategory? = null,
     @ColumnInfo(name = "density_g_per_ml") val densityGramsPerMl: Double? = null,
     @ColumnInfo(name = "item_weight_grams") val itemWeightGrams: Double? = null,
+    @ColumnInfo(name = "updated_at", defaultValue = "0") val updatedAt: Long = 0L,
 )
 
 @Entity(
@@ -76,6 +78,7 @@ data class TagEntity(
     val name: String?,
     @ColumnInfo(name = "is_built_in") val isBuiltIn: Boolean,
     @ColumnInfo(name = "color_index") val colorIndex: Int = 0,
+    @ColumnInfo(name = "updated_at", defaultValue = "0") val updatedAt: Long = 0L,
 )
 
 @Entity(

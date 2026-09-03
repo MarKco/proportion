@@ -103,6 +103,54 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun `migrating from version 3 adds deleted_at on recipes without losing existing rows`() {
+        val v3 = helper.createDatabase(TEST_DB, 3)
+        v3.execSQL(
+            "INSERT INTO recipes " +
+                "(id, title, servings, steps, is_favourite, cook_count, created_at, updated_at) " +
+                "VALUES ('r-cake', 'Torta', 4, '[]', 0, 0, 100, 100)",
+        )
+        v3.close()
+
+        val v4 = helper.runMigrationsAndValidate(TEST_DB, 4, true, Migration3to4())
+
+        val cursor = v4.query("SELECT title, deleted_at FROM recipes WHERE id = 'r-cake'")
+        cursor.use {
+            assertThat(it.moveToFirst()).isTrue()
+            assertThat(it.getString(it.getColumnIndexOrThrow("title"))).isEqualTo("Torta")
+            assertThat(it.isNull(it.getColumnIndexOrThrow("deleted_at"))).isTrue()
+        }
+    }
+
+    @Test
+    fun `migrating from version 3 adds updated_at on ingredients and tags, defaulting to zero`() {
+        val v3 = helper.createDatabase(TEST_DB, 3)
+        v3.execSQL(
+            "INSERT INTO ingredients (id, name, normalised_name, is_built_in, default_unit) " +
+                "VALUES ('ing-user', 'La mia farina', 'la mia farina', 0, 'GRAM')",
+        )
+        v3.execSQL(
+            "INSERT INTO tags (id, key, name, is_built_in, color_index) " +
+                "VALUES ('tag-user', NULL, 'Ricette di famiglia', 0, 1)",
+        )
+        v3.close()
+
+        val v4 = helper.runMigrationsAndValidate(TEST_DB, 4, true, Migration3to4())
+
+        val ingredient = v4.query("SELECT updated_at FROM ingredients WHERE id = 'ing-user'")
+        ingredient.use {
+            assertThat(it.moveToFirst()).isTrue()
+            assertThat(it.getLong(it.getColumnIndexOrThrow("updated_at"))).isEqualTo(0L)
+        }
+
+        val tag = v4.query("SELECT updated_at FROM tags WHERE id = 'tag-user'")
+        tag.use {
+            assertThat(it.moveToFirst()).isTrue()
+            assertThat(it.getLong(it.getColumnIndexOrThrow("updated_at"))).isEqualTo(0L)
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

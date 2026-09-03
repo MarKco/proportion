@@ -10,20 +10,37 @@ import com.ilsecondodasinistra.proportion.core.data.repository.TransferRepositor
 import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
 import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncResult
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.model.RecipeIngredient
+import com.ilsecondodasinistra.proportion.core.model.SyncLogEntry
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
 import com.ilsecondodasinistra.proportion.core.transfer.ImportMode
 import com.ilsecondodasinistra.proportion.core.transfer.ImportOutcome
 import com.ilsecondodasinistra.proportion.core.transfer.ImportPreview
+import javax.inject.Provider
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+
+/** This suite is about the wire format, not sync — every call here is a no-op. */
+private val noopSync = Provider<SyncRepository> {
+    object : SyncRepository {
+        override suspend fun exportRecipe(recipeId: String) = Unit
+        override suspend fun exportIngredient(ingredientId: String) = Unit
+        override suspend fun exportTag(tagId: String) = Unit
+        override suspend fun syncNow(): SyncResult = SyncResult(0, 0, 0, 0)
+        override fun observeLog(): Flow<List<SyncLogEntry>> = flowOf(emptyList())
+    }
+}
 
 @RunWith(RobolectricTestRunner::class)
 class TransferRepositoryTest {
@@ -46,14 +63,14 @@ class TransferRepositoryTest {
 
         val time = TimeProvider { 1_000L }
         namer = BuiltInIngredientNamer { key -> "[$key]" }
-        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), namer, time)
-        ingredients = IngredientRepositoryImpl(db.ingredientDao(), namer)
+        recipes = RecipeRepositoryImpl(db.recipeDao(), db.ingredientDao(), namer, time, noopSync)
+        ingredients = IngredientRepositoryImpl(db.ingredientDao(), namer, time, noopSync)
         transfer = TransferRepositoryImpl(
             recipeRepository = recipes,
             ingredientRepository = ingredients,
             ingredientDao = db.ingredientDao(),
             namer = namer,
-            tagRepository = TagRepositoryImpl(db.tagDao()),
+            tagRepository = TagRepositoryImpl(db.tagDao(), time, noopSync),
             recipeDao = db.recipeDao(),
             tagDao = db.tagDao(),
             time = time,
@@ -184,7 +201,7 @@ class TransferRepositoryTest {
     @Test
     fun `an incoming user tag is created and a built in tag binds to the seeded one`() = runTest {
         val recipe = storeCake()
-        val userTag = TagRepositoryImpl(db.tagDao()).findOrCreateUserTag("merenda")
+        val userTag = TagRepositoryImpl(db.tagDao(), TimeProvider { 1_000L }, noopSync).findOrCreateUserTag("merenda")
         recipes.upsert(recipe.copy(tags = recipe.tags + userTag))
 
         val text = transfer.exportAll()
@@ -235,6 +252,79 @@ class TransferRepositoryTest {
     @Test
     fun `exporting a recipe that no longer exists returns nothing`() = runTest {
         assertThat(transfer.exportRecipe("nope")).isNull()
+    }
+
+    @Test
+    fun `a recipe's tombstone survives export and import`() = runTest {
+        storeCake()
+        recipes.delete("r-cake")
+
+        val text = transfer.exportRecipe("r-cake")!!
+        db.recipeDao().hardDeleteRecipe("r-cake")
+
+        transfer.import(text, ImportMode.MERGE)
+
+        // Invisible in every normal read, same as before the round trip...
+        assertThat(recipes.observeRecipes().first()).isEmpty()
+        // ...but the tombstone itself came back, not silently dropped by the wire format.
+        assertThat(db.recipeDao().existingIds(listOf("r-cake"))).containsExactly("r-cake")
+    }
+
+    @Test
+    fun `resolveRecipe carries the wire updatedAt through, not just the id and title`() = runTest {
+        storeCake()
+        val text = transfer.exportRecipe("r-cake")!!
+
+        val resolved = transfer.resolveRecipe(text)!!
+
+        // Folder sync (phase 10) resolves conflicts by this field: if resolveRecipe silently
+        // dropped it (defaulted to 0), every synced recipe would look older than anything local
+        // and never win a conflict it should.
+        assertThat(resolved.updatedAt).isEqualTo(1_000L)
+    }
+
+    @Test
+    fun `exporting a literal ingredient carries its density and item weight`() = runTest {
+        val flour = ingredients.findOrCreate("Farina 00", MeasureUnit.GRAM)
+        ingredients.setDensityData(flour.id, densityGramsPerMl = 0.55, itemWeightGrams = null)
+
+        val text = transfer.exportIngredient(flour.id)!!
+
+        assertThat(text).contains("Farina 00")
+        assertThat(text).contains("0.55")
+    }
+
+    @Test
+    fun `exporting a built-in ingredient returns nothing`() = runTest {
+        val flour = db.ingredientDao().findByKey("flour_00")!!
+
+        assertThat(transfer.exportIngredient(flour.id)).isNull()
+    }
+
+    @Test
+    fun `exporting an ingredient that does not exist returns nothing`() = runTest {
+        assertThat(transfer.exportIngredient("nope")).isNull()
+    }
+
+    @Test
+    fun `exporting a user tag carries its name`() = runTest {
+        val userTag = TagRepositoryImpl(db.tagDao(), TimeProvider { 1_000L }, noopSync).findOrCreateUserTag("merenda")
+
+        val text = transfer.exportTag(userTag.id)!!
+
+        assertThat(text).contains("merenda")
+    }
+
+    @Test
+    fun `exporting a built-in tag returns nothing`() = runTest {
+        val dessert = db.tagDao().findByKey("dessert")!!
+
+        assertThat(transfer.exportTag(dessert.id)).isNull()
+    }
+
+    @Test
+    fun `exporting a tag that does not exist returns nothing`() = runTest {
+        assertThat(transfer.exportTag("nope")).isNull()
     }
 
     @Test

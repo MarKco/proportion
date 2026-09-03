@@ -1,6 +1,8 @@
 package com.ilsecondodasinistra.proportion.feature.settings
 
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncResult
 import com.ilsecondodasinistra.proportion.core.model.AppTheme
+import com.ilsecondodasinistra.proportion.core.model.SyncLogEntry
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import com.ilsecondodasinistra.proportion.core.transfer.DecodeFailure
 
@@ -36,4 +38,12 @@ data class SettingsUiState(
     val restore: RestoreStep = RestoreStep.Idle,
     val backupSaved: Boolean = false,
     val isWorking: Boolean = false,
-)
+    val syncEnabled: Boolean = false,
+    val syncFolderUri: String? = null,
+    val syncInProgress: Boolean = false,
+    val syncLastResult: SyncResult? = null,
+    val syncLog: List<SyncLogEntry> = emptyList(),
+) {
+    /** The most recent failure, if any — what the error banner shows. */
+    val syncLastError: SyncLogEntry? get() = syncLog.lastOrNull { it.isError }
+}

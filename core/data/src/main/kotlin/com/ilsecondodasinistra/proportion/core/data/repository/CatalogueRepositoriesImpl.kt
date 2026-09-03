@@ -7,13 +7,16 @@ import com.ilsecondodasinistra.proportion.core.database.entity.IngredientEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.TagEntity
 import com.ilsecondodasinistra.proportion.core.domain.BuiltInIngredientNamer
 import com.ilsecondodasinistra.proportion.core.domain.IngredientNames
+import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
 import com.ilsecondodasinistra.proportion.core.domain.repository.IngredientRepository
+import com.ilsecondodasinistra.proportion.core.domain.repository.SyncRepository
 import com.ilsecondodasinistra.proportion.core.domain.repository.TagRepository
 import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Tag
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -21,6 +24,9 @@ import kotlinx.coroutines.flow.map
 class IngredientRepositoryImpl @Inject constructor(
     private val dao: IngredientDao,
     private val namer: BuiltInIngredientNamer,
+    private val time: TimeProvider,
+    // Provider, not a direct SyncRepository — see RecipeRepositoryImpl's note on the Dagger cycle.
+    private val sync: Provider<SyncRepository>,
 ) : IngredientRepository {
 
     override fun observeAll(): Flow<List<Ingredient>> =
@@ -46,19 +52,26 @@ class IngredientRepositoryImpl @Inject constructor(
             normalisedName = normalised,
             isBuiltIn = false,
             defaultUnit = defaultUnit,
+            updatedAt = time.now(),
         )
         dao.upsertAll(listOf(created))
+        sync.get().exportIngredient(created.id)
         return created.toDomain(namer)
     }
 
     override suspend fun setDensityData(id: String, densityGramsPerMl: Double?, itemWeightGrams: Double?) {
-        densityGramsPerMl?.let { dao.updateDensity(id, it) }
-        itemWeightGrams?.let { dao.updateItemWeight(id, it) }
+        val now = time.now()
+        densityGramsPerMl?.let { dao.updateDensity(id, it, now) }
+        itemWeightGrams?.let { dao.updateItemWeight(id, it, now) }
+        sync.get().exportIngredient(id)
     }
 }
 
 class TagRepositoryImpl @Inject constructor(
     private val dao: TagDao,
+    private val time: TimeProvider,
+    // Provider, not a direct SyncRepository — see RecipeRepositoryImpl's note on the Dagger cycle.
+    private val sync: Provider<SyncRepository>,
 ) : TagRepository {
 
     override fun observeAll(): Flow<List<Tag>> =
@@ -77,8 +90,10 @@ class TagRepositoryImpl @Inject constructor(
             key = null,
             name = trimmed,
             isBuiltIn = false,
+            updatedAt = time.now(),
         )
         dao.upsert(created)
+        sync.get().exportTag(created.id)
         return created.toDomain()
     }
 

@@ -17,11 +17,138 @@ against the device's own pre-existing recipes (zero data loss), and all three co
 exercised live with a literal ingredient that had no density recorded — see "Phase 9" below for
 what that live pass actually found and fixed.
 
-**What is next:** no phase 10 has been scoped yet. Two small things Marco flagged live during this
-session were fixed on the spot rather than deferred — see "Also fixed this session" below — since
-they were quick and he was watching the app run. `IngredientResourceConsistencyTest` has not been
-extended to assert density/item-weight coverage on the 477 built-ins; worth doing before the next
-catalogue edit, not urgent on its own.
+**What is next:** phase 10 (sync via Syncthing-watched folder) is in progress —
+`docs/private/specs/2026-09-03-syncthing-folder-sync-design.md` and
+`docs/private/plans/2026-09-03-phase-10-syncthing-folder-sync.md`. Scope grew mid-design at Marco's
+request to also sync the literal (non built-in) ingredient/tag catalogue, not just recipes, and to
+use a periodic `WorkManager` job (~4h) rather than an on-resume trigger, plus an in-app sync error
+log shareable via the system share sheet — both docs already reflect this, the plan's task list is
+current. Design: raw SQLite file explicitly rejected (WAL + no conflict resolution); instead reuses
+the `.proportion` wire format, one file per entity (recipe/ingredient/tag) in a SAF-picked folder,
+conflicts resolved by `updatedAt` (last-write-wins, silent), deletions propagated via a new
+`Recipe.deletedAt` tombstone (ingredients/tags have no delete UI today, so no tombstone for them).
+
+**Task 1 done** (schema + model changes): `Recipe.deletedAt`, `Ingredient.updatedAt`,
+`Tag.updatedAt` added; `Migration3to4` (schema 4) adds the three columns — `updated_at` on
+ingredients/tags carries `@ColumnInfo(defaultValue = "0")` (**required**: the shared
+`seedBuiltInIngredients`/tag-seeding SQL used by both `Migration1to2`, which targets schema 2 and
+must never mention a column that doesn't exist yet there, and `seedCallback`, which targets a fresh
+schema-4 install where the column is NOT NULL — only a SQL-level default reconciles both callers
+without forking the seed function); `RecipeRepositoryImpl.delete` is now a soft-delete
+(`softDeleteRecipe`), `RecipeDao.hardDeleteRecipe` added for the sync cleanup step (Task 5) to use
+later; `IngredientRepositoryImpl`/`TagRepositoryImpl` now take `TimeProvider` and stamp `updatedAt`
+on create/density-update. **Real bug found and fixed**: `IngredientDao.observeInUse`/
+`observeInUseCount` counted an ingredient as "in use" even when its only referencing recipe was
+soft-deleted — both queries now join `recipes` and filter `deleted_at IS NULL`.
+
+**Task 2 done** (transfer format): `WireRecipe.deletedAt` round-trips; new `WireIngredientEntry`/
+`WireTagEntry` (`ProportionFile.kt`) plus `ProportionCodec.encode/decodeIngredientEntry` and
+`encode/decodeTagEntry` (malformed input decodes to `null`, no throw — mirrors the rest of the
+codec); `TransferRepository` gained `exportIngredient(id)`/`exportTag(id)` (null for a missing or
+built-in row — built-ins never sync, seeded identically everywhere). **Real bug found and fixed**:
+`exportRecipe` read through `recipeRepository.observeRecipe`, which (per Task 1) hides a
+soft-deleted recipe — so exporting the tombstone right after a delete returned nothing, exactly
+when sync needs it most. Fixed with a new unfiltered `RecipeDao.findByIdIncludingDeleted`, which
+`exportRecipe` now uses instead. `./gradlew testDebugUnitTest detekt` green across every module
+after both tasks.
+
+**Task 3 done** (new pure module `:core:sync`, zero dependencies — not even `:core:model`, entirely
+entity-agnostic): `SyncableState(updatedAt, deletedAt)` + `decideSyncAction(local, remote):
+SyncAction` (`Insert`/`Overwrite`/`Delete`/`Skip`), covers every case from the spec including the
+"undelete" (a locally-tombstoned row revived by a more recent incoming write) without a special
+case — it falls out of not inspecting `local.deletedAt` at all. File is `SyncableState.kt`, not
+`SyncPlan.kt` as the plan first named it (detekt's `MatchingDeclarationName` wants the file to match
+its main top-level declaration).
+
+**Task 4 done**: `UserPreferences.syncEnabled`/`syncFolderUri` (both `:core:model` and
+`:core:datastore`'s `UserPreferencesDataSource`), `PreferencesRepository.setSyncEnabled`/
+`setSyncFolderUri`.
+
+**Task 5 done** (the big one — `SyncRepositoryImpl`, real SAF I/O): `SyncRepository` interface
+(`:core:domain`) + impl (`:core:data`, new `androidx.documentfile` dependency), bound in
+`DataBindingsModule`. `syncNow()` pulls before it pushes, then does a full push of every local
+recipe/literal-ingredient/literal-tag — this is deliberate and is what makes "turn sync on" and "a
+fresh install pointed at an already-populated folder" both work with no separate first-run code
+path (see spec). New `SyncLogEntry` (`:core:model`) + `SyncLogDataSource` (`:core:datastore`,
+hand-rolled encoding, capped at 50 entries, no serialization dependency needed for that). Per-write
+export hooked into `RecipeRepositoryImpl.upsert`/`delete`, `IngredientRepositoryImpl.findOrCreate`/
+`setDensityData`, `TagRepositoryImpl.findOrCreateUserTag`.
+
+- **Dagger cycle**: injecting `SyncRepository` straight into those three repositories cycles back
+  through `SyncRepositoryImpl → TransferRepository → RecipeRepository/IngredientRepository/
+  TagRepository`. Fixed with `javax.inject.Provider<SyncRepository>` in all three (`sync.get()`) —
+  the standard Dagger way to break a cycle that only matters at call time.
+- **Three real bugs found by this task's tests** (not `:core:sync`'s own tests, which were already
+  green in isolation):
+  1. `syncNow()` pushed before it pulled — a newer file already in the folder for a locally-known
+     id got clobbered by the local (older) push before the pull ever read it. Fixed by reordering:
+     pull always runs first.
+  2. `TransferRepositoryImpl.WireRecipe.toRecipe()` never mapped the `updatedAt`/`createdAt` fields
+     added to `WireRecipe` earlier in this same phase — every recipe `resolveRecipe` produced came
+     back with `updatedAt = 0`, so **every incoming file would have lost every conflict**, silently
+     (no crash, no log entry) — sync would have looked like it worked while never actually applying
+     an update. `:core:transfer`'s own tests didn't catch it because they test the wire round-trip,
+     not its application; `SyncRepositoryTest` did.
+  3. `DocumentFile.createFile(mimeType, name)` can append an extension derived from the mime type
+     (`application/octet-stream` → `.bin` under Robolectric; a real SAF provider can do the same
+     for a generic mime type) — silently breaking the `findFile(name)` lookup a re-export needs to
+     overwrite instead of duplicating. Fixed with a vendor-specific mime type
+     (`application/x-proportion-sync`) that appears in no `MimeTypeMap` table, used only for
+     `createFile` — `ProportionFile.MIME_TYPE` (the share-intent one) is untouched.
+- Test seam: `file://` URIs are treated as a test-only path (`DocumentFile.fromFile`, direct
+  `java.io.File` I/O bypassing `ContentResolver`) — the real picker only ever yields `content://`,
+  so production never takes this branch; it exists so `SyncRepositoryTest` can run against a real
+  temp directory under Robolectric with no `DocumentsProvider` to mock.
+
+`./gradlew testDebugUnitTest detekt` green across every module after Tasks 4 and 5.
+
+**Task 6 done** (Settings UI): new `SyncSection.kt` composable — toggle, folder picker
+(`ActivityResultContracts.OpenDocumentTree` + `takePersistableUriPermission`), "Sincronizza ora",
+error banner + "Condividi log" (reuses `RecipeSharing.shareText`, `:core:ui` — the same mechanism
+recipe sharing already used, nothing new there). `SettingsUiState` gained `syncEnabled`,
+`syncFolderUri`, `syncInProgress`, `syncLastResult`, `syncLog` (+ a derived `syncLastError`).
+Strings added to both `values/` and `values-it/`.
+
+**Task 7 done** (periodic `WorkManager` job, ~4h): `SyncScheduler` interface (`:core:domain`, no
+`android.*`) + `WorkManagerSyncScheduler`/`SyncWorker` (`:core:data/sync/` — co-located with
+`SyncRepositoryImpl` rather than `:app`, since `:app` doesn't otherwise need to know WorkManager
+exists). `ProPortionApplication` implements `Configuration.Provider` with an injected
+`HiltWorkerFactory`, which is what lets `SyncWorker` be a `@HiltWorker`.
+`SettingsViewModel.onSyncEnabledChange` calls `syncScheduler.schedule()`/`cancel()`;
+`onSyncFolderChosen` runs an immediate `syncNow()` rather than waiting up to 4h.
+
+- **Manifest gotcha**: `verifyAll`'s lint step failed (`RemoveWorkManagerInitializer`) until the
+  default `androidx.startup.InitializationProvider`'s `WorkManagerInitializer` entry was removed
+  via `tools:node="remove"` in `AndroidManifest.xml` — required whenever `Application` implements
+  `Configuration.Provider`, not optional, and lint (not a runtime crash) is what catches it.
+
+`./gradlew verifyAll` (detekt, lint, every test, a debug APK) is green after Tasks 6 and 7.
+
+**Task 8 partially done** (device verification, Fairphone 3, 2026-09-03) — the two things Marco
+explicitly asked to check this round, both confirmed working with the device's own real
+pre-existing data (2 recipes):
+1. Enabling sync + picking a real SAF folder (`Download/proportion-sync/`) exports everything
+   immediately — 5 files landed on disk (2 recipes + 3 literal ingredients), real content
+   confirmed via `adb shell cat` (correct names — no `.bin` suffix, confirming the mime-type fix
+   holds on a real provider, not just Robolectric's).
+2. `pm clear` (equivalent to a fresh install: empty DB, revoked SAF grant) → reopen → re-enable
+   sync → re-pick the same now-populated folder (fresh consent) → the automatic sync-on-folder-
+   chosen reported "5 esportate, 2 ricette importate, 0 cancellate, 2 voci di catalogo", and both
+   recipes reappeared on Home.
+
+Not yet done, and explicitly Marco's to run: the real two-device Syncthing test (concurrent edits,
+conflict resolution, deletion propagation, error banner, WorkManager cancellation) — the four
+unchecked items under Task 8 in the plan.
+
+**Worth knowing, not a bug**: `cookCount`/`lastCookedAt`/`isFavourite` were never part of the
+`.proportion` wire format (true for backup/restore too, predates phase 10) — after a sync-driven
+import those reset to zero/false on the receiving device. Recipe content syncs; local usage stats
+don't. Flagged in the plan in case it surprises Marco during his own test.
+
+Two small things Marco flagged live during the phase 9 session were fixed on the spot rather than
+deferred — see "Also fixed this session" below — since they were quick and he was watching the app
+run. `IngredientResourceConsistencyTest` has not been extended to assert density/item-weight
+coverage on the 477 built-ins; worth doing before the next catalogue edit, not urgent on its own.
 
 **Phase 9, 2026-09-03: cross-category unit conversion.** Spec:
 `docs/private/specs/2026-09-03-unit-conversion-density-design.md`. Split across two sessions — the

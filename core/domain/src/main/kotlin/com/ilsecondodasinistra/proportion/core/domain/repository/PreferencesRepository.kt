@@ -10,4 +10,8 @@ interface PreferencesRepository {
     suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setDynamicColour(enabled: Boolean)
     suspend fun setAppTheme(theme: AppTheme)
+    suspend fun setSyncEnabled(enabled: Boolean)
+
+    /** Null clears the choice — the folder picker was cancelled, or the user turned sync off. */
+    suspend fun setSyncFolderUri(uri: String?)
 }

@@ -16,12 +16,20 @@ import kotlinx.coroutines.flow.Flow
 abstract class RecipeDao {
 
     @Transaction
-    @Query("SELECT * FROM recipes ORDER BY updated_at DESC")
+    @Query("SELECT * FROM recipes WHERE deleted_at IS NULL ORDER BY updated_at DESC")
     abstract fun observeAll(): Flow<List<RecipeWithRelations>>
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE id = :id")
+    @Query("SELECT * FROM recipes WHERE id = :id AND deleted_at IS NULL")
     abstract fun observeById(id: String): Flow<RecipeWithRelations?>
+
+    /**
+     * Unlike [observeById], sees a soft-deleted row too — folder sync (phase 10) needs this to
+     * export a tombstone file for a recipe the UI can no longer see.
+     */
+    @Transaction
+    @Query("SELECT * FROM recipes WHERE id = :id")
+    abstract suspend fun findByIdIncludingDeleted(id: String): RecipeWithRelations?
 
     /**
      * The three filters combine with AND. Within the ingredient filter a recipe must contain
@@ -40,7 +48,8 @@ abstract class RecipeDao {
     @Query(
         """
         SELECT * FROM recipes AS r
-        WHERE (
+        WHERE r.deleted_at IS NULL
+        AND (
             :query = ''
             OR LOWER(r.title) LIKE '%' || :query || '%'
             OR LOWER(IFNULL(r.notes, '')) LIKE '%' || :query || '%'
@@ -97,8 +106,13 @@ abstract class RecipeDao {
     @Upsert
     abstract suspend fun upsert(recipe: RecipeEntity)
 
+    /** Soft-delete: sets the tombstone instead of removing the row — see phase 10 (folder sync). */
+    @Query("UPDATE recipes SET deleted_at = :now WHERE id = :id")
+    abstract suspend fun softDeleteRecipe(id: String, now: Long)
+
+    /** Actually removes the row. Only the sync cleanup (Task 5) calls this, never the UI. */
     @Query("DELETE FROM recipes WHERE id = :id")
-    abstract suspend fun deleteRecipe(id: String)
+    abstract suspend fun hardDeleteRecipe(id: String)
 
     @Query("UPDATE recipes SET is_favourite = :favourite, updated_at = :now WHERE id = :id")
     abstract suspend fun setFavourite(id: String, favourite: Boolean, now: Long)
@@ -115,10 +129,18 @@ abstract class RecipeDao {
     @Query("SELECT id FROM recipes WHERE id IN (:ids)")
     abstract suspend fun existingIds(ids: List<String>): List<String>
 
+    /** Folder sync (phase 10) only: every recipe, tombstones included — the export-everything pass. */
+    @Query("SELECT id FROM recipes")
+    abstract suspend fun allIds(): List<String>
+
+    /** Folder sync (phase 10) only: tombstones old enough for the sync cleanup pass to hard-delete. */
+    @Query("SELECT id FROM recipes WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff")
+    abstract suspend fun tombstonesOlderThan(cutoff: Long): List<String>
+
     @Query("DELETE FROM recipes")
     abstract suspend fun deleteAllRecipes()
 
-    @Query("SELECT COUNT(*) FROM recipes")
+    @Query("SELECT COUNT(*) FROM recipes WHERE deleted_at IS NULL")
     abstract fun observeRecipeCount(): Flow<Int>
 
     @Query("DELETE FROM recipe_ingredients WHERE recipe_id = :recipeId")

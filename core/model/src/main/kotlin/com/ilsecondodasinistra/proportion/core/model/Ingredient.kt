@@ -14,6 +14,9 @@ package com.ilsecondodasinistra.proportion.core.model
  * @param itemWeightGrams grams per one [defaultUnit], used to convert a COUNT-category ingredient
  * (e.g. "1 egg", "1 slice") to and from MASS/VOLUME. Only meaningful when [defaultUnit] is a COUNT
  * unit; null when unknown.
+ * @param updatedAt only meaningful for a literal (non built-in) row — built-ins are seeded
+ * identically everywhere and never sync. Used by folder sync (phase 10) to resolve a conflict
+ * between two devices in favour of the more recent write.
  */
 data class Ingredient(
     val id: String,
@@ -25,6 +28,7 @@ data class Ingredient(
     val category: IngredientCategory? = null,
     val densityGramsPerMl: Double? = null,
     val itemWeightGrams: Double? = null,
+    val updatedAt: Long = 0L,
 ) {
     init {
         require(isBuiltIn == (key != null)) {
