@@ -207,6 +207,10 @@ Continuous quantities below half a gram or half a millilitre raise `TooSmallToMe
 
 ## The `.proportion` format
 
+See also `proportion-format-guide.md` + `example-recipes.proportion` in this folder: a field-by-field
+guide and a valid multi-recipe example, meant to be handed to an AI (as a few-shot prompt) to
+generate `.proportion` files from existing recipes.
+
 One JSON format, three uses: sharing a single recipe, backing up the whole library, and (one file
 per entity) the Syncthing-folder sync all reuse it — they differ only in how many recipes the file
 holds and, for sync, in carrying a single ingredient or tag entry instead of a recipe.
