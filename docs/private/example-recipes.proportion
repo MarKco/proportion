@@ -1,0 +1,92 @@
+{
+    "format": "proportion",
+    "version": 1,
+    "exportedAt": "2026-09-03T12:00:00Z",
+    "recipes": [
+        {
+            "id": "b3b1a2e0-1a2b-4c3d-8e4f-5a6b7c8d9e01",
+            "title": "Risotto allo zafferano",
+            "servings": 4,
+            "tags": [
+                "builtin:first_course"
+            ],
+            "ingredients": [
+                { "name": "Riso Carnaroli", "qty": 320, "unit": "GRAM" },
+                { "name": "Zafferano", "qty": 1, "unit": "SACHET" },
+                { "name": "Brodo vegetale", "qty": 1, "unit": "LITRE" },
+                { "name": "Cipolla", "qty": 0.5, "unit": "PIECE" },
+                { "name": "Burro", "qty": 40, "unit": "GRAM" },
+                { "name": "Parmigiano grattugiato", "qty": 60, "unit": "GRAM" },
+                { "name": "Vino bianco", "qty": 100, "unit": "MILLILITRE" },
+                { "name": "Sale", "qty": null, "unit": "TO_TASTE", "display": "q.b." }
+            ],
+            "steps": [
+                "Tritare la cipolla e farla appassire nel burro a fuoco basso.",
+                "Aggiungere il riso e tostarlo per 2 minuti, mescolando.",
+                "Sfumare con il vino bianco e lasciare evaporare.",
+                "Aggiungere il brodo caldo un mestolo alla volta, mescolando spesso, per circa 18 minuti.",
+                "A cottura ultimata, sciogliere lo zafferano in un mestolo di brodo e incorporarlo.",
+                "Mantecare con burro e parmigiano fuori dal fuoco, aggiustare di sale."
+            ],
+            "notes": "Il riso deve restare all'onda, non asciutto.",
+            "variants": [],
+            "deletedAt": null,
+            "updatedAt": 1767441600000,
+            "createdAt": 1767441600000
+        },
+        {
+            "id": "c4c2b3f1-2b3c-4d4e-9f5a-6b7c8d9e0f12",
+            "title": "Torta di mele",
+            "servings": 6,
+            "tags": [
+                "builtin:dessert",
+                "builtin:oven",
+                "Autunno"
+            ],
+            "ingredients": [
+                { "name": "Farina 00", "qty": 350, "unit": "GRAM" },
+                { "name": "Zucchero", "qty": 200, "unit": "GRAM" },
+                { "name": "Burro", "qty": 100, "unit": "GRAM" },
+                { "name": "Uova", "qty": 3, "unit": "EGG" },
+                { "name": "Mele", "qty": 4, "unit": "PIECE" },
+                { "name": "Lievito per dolci", "qty": 1, "unit": "SACHET" },
+                { "name": "Sale", "qty": null, "unit": "TO_TASTE", "display": "un pizzico" }
+            ],
+            "steps": [
+                "Sbattere le uova con lo zucchero fino a ottenere un composto chiaro e spumoso.",
+                "Aggiungere il burro fuso, la farina setacciata con il lievito e un pizzico di sale.",
+                "Incorporare le mele tagliate a pezzetti.",
+                "Versare il composto in una teglia da 24 cm imburrata e infornare a 180°C per 45 minuti."
+            ],
+            "notes": null,
+            "variants": [],
+            "deletedAt": null,
+            "updatedAt": 1767441600000,
+            "createdAt": 1767441600000
+        },
+        {
+            "id": "d5d3c4a2-3c4d-4e5f-a06b-7c8d9e0f1a23",
+            "title": "Marmellata di fragole",
+            "servings": null,
+            "tags": [
+                "builtin:preserves"
+            ],
+            "ingredients": [
+                { "name": "Fragole", "qty": 1, "unit": "KILOGRAM" },
+                { "name": "Zucchero", "qty": 700, "unit": "GRAM" },
+                { "name": "Succo di limone", "qty": 2, "unit": "TABLESPOON" }
+            ],
+            "steps": [
+                "Lavare, mondare e tagliare a pezzi le fragole.",
+                "Metterle in una pentola con zucchero e succo di limone, lasciar macerare 2 ore.",
+                "Cuocere a fuoco medio mescolando spesso finché non raggiunge la consistenza desiderata (circa 40 minuti).",
+                "Invasare bollente in vasetti sterilizzati e capovolgere fino a raffreddamento."
+            ],
+            "notes": "Una ricetta senza porzioni: la resa dipende dalla quantità di frutta, non da un numero di persone.",
+            "variants": [],
+            "deletedAt": null,
+            "updatedAt": 1767441600000,
+            "createdAt": 1767441600000
+        }
+    ]
+}

@@ -30,6 +30,7 @@ channel; AndroidX versions are pinned to the last ones that allow compiling agai
 
 - `docs/private` — this folder: `STATUS.md` (living checklist), `HISTORY.md` (phase-by-phase
   record), `ARCHITECTURE.md`, `DECISIONS.md`, plus `contributing.md`, `localization.md` and
-  `release-checklist.md`.
+  `release-checklist.md`. `proportion-format-guide.md` + `example-recipes.proportion` are a
+  companion pair for prompting an AI to generate `.proportion` files from existing recipes.
 - `docs/public` — what the app is, for users (Italian and English).
 - `docs/manual` — the user manual with real screenshots (Italian and English).
