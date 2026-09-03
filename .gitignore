@@ -34,3 +34,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Working verification screenshots (not linked from docs, local-only)
+docs/private/screenshots/

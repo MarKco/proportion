@@ -11,10 +11,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ProPortion">
 
+        <!-- adjustResize, not the system default: without it the window is *panned* up when the
+             keyboard opens, which shifts every window coordinate while the scroll state stays put.
+             The editor scrolls a focused ingredient row into view using those coordinates, so a
+             pan on top of that scroll pushed the row off the top of the screen (and let go again
+             on the next keystroke). With adjustResize the keyboard is reported through the ime
+             insets the editor already reads, and the window itself stays where it is. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.ProPortion">
+            android:theme="@style/Theme.ProPortion"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

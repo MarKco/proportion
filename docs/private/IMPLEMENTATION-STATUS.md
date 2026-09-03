@@ -215,6 +215,34 @@ note above), with real unit tests and a live on-device check for each:
   guessing from a size change; loading a recipe's saved lines never touches that field, so it can
   no longer misfire. Two regression tests guard this: one confirms loading a recipe never sets it,
   the other confirms `onAddLine` sets it to the right line and it clears once handled.
+- **Tapping an ingredient name no longer glitches upward on every keystroke, and the row lands
+  where it should.** Same area as the four bugs above, three more found (all confirmed on-device
+  with screenshots and, for the last one, with logged coordinates rather than reasoning):
+  (5) the row was kept in place while typing by *re-asserting* an oversized `bringIntoView` rect
+  after every keystroke, to counter `BasicTextField`'s own per-keystroke "keep the caret visible"
+  call — two scrolls fighting each other, once per character, which is exactly what the glitch was.
+  Fixed by reserving the clearance as **real laid-out space**: a `Spacer` below the card, whose
+  height shrinks by exactly the height the suggestion chips take, so the row's total height never
+  changes as the filtered list changes, the caret stays visible on its own, and `BasicTextField`'s
+  call becomes the no-op it should have been. Nothing is re-asserted, nothing moves.
+  (6) `WindowInsets.ime` is measured from the bottom of the *window*, so it includes the navigation
+  bar — which `Scaffold` had already taken out of the content padding, and therefore out of the
+  measured viewport height. Using the raw inset double-counted the navigation bar and scrolled the
+  row that much too far; the code now subtracts `WindowInsets.navigationBars`, keeping both
+  measurements in one coordinate space.
+  (7) the actual cause of the row flying off the top: `MainActivity` had no
+  `windowSoftInputMode`, so the system **panned the whole window** up when the keyboard opened.
+  Every window coordinate shifted while `ScrollState` stayed put, so the editor's own (correct)
+  scroll landed on top of a pan it could not see — and the pan was released again on the next
+  keystroke, which is why typing appeared to "fix" the position. Set to `adjustResize` in the
+  manifest, which is what an edge-to-edge Compose screen reading `WindowInsets.ime` expects anyway.
+  Scrolling a focused row is no longer done through `BringIntoViewRequester` at all: a requester
+  can only be asked to fit a rect and, when the rect does not fit, silently scrolls as far as it
+  can instead (for a request as tall as the viewport, straight up under the top bar). The screen
+  now computes the offset itself — the row's position inside the content, measured against the
+  first item rather than against the viewport node, because the viewport node's reported position
+  does not include the `Scaffold` padding applied to it — and clamps it so it never scrolls past
+  bringing the row's own top to the top of the viewport.
 - **The recipe detail screen has a standalone edit (pencil) button, top-right, always visible** —
   no need to open the overflow (⋮) menu first. The redundant "Modifica" entry was removed from that
   menu, which now holds only share/delete.
