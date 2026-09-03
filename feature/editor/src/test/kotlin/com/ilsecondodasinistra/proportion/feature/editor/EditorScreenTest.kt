@@ -31,6 +31,7 @@ class EditorScreenTest {
                     onLineQuantityChange = { _, _ -> },
                     onLineUnitChange = { _, _ -> },
                     onAddLine = {},
+                    onNewLineFocusHandled = {},
                     onRemoveLine = {},
                     onStepChange = { _, _ -> },
                     onAddStep = {},

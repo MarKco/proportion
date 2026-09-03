@@ -35,6 +35,13 @@ data class EditorUiState(
     val isDirty: Boolean = false,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
+    /**
+     * Set only by [EditorViewModel.onAddLine] to the line it just appended, so the screen can
+     * focus and scroll to that one row without guessing from a line-count change — which would
+     * also (wrongly) fire the moment an existing recipe's saved lines finish loading. Cleared by
+     * the screen once it has acted on it.
+     */
+    val justAddedLineId: String? = null,
 ) {
     val isEditing: Boolean get() = recipeId != null
 

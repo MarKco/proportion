@@ -149,7 +149,13 @@ class EditorViewModel @Inject constructor(
         )
     }
 
-    fun onAddLine() = edit { it.copy(lines = it.lines + EditorLine(id = newLineId())) }
+    fun onAddLine() = edit { state ->
+        val newLine = EditorLine(id = newLineId())
+        state.copy(lines = state.lines + newLine, justAddedLineId = newLine.id)
+    }
+
+    /** Called once the screen has focused/scrolled to the line [onAddLine] just added. */
+    fun onNewLineFocusHandled() = edit { it.copy(justAddedLineId = null) }
 
     fun onRemoveLine(index: Int) = edit { state ->
         val remaining = state.lines.filterIndexed { i, _ -> i != index }

@@ -62,6 +62,39 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `loading an existing recipe's lines does not mark any of them as just added`() = runTest {
+        // A regression guard: the editor used to infer "just added" from the line count going up,
+        // which also (wrongly) fired the moment this load populates the draft from 1 placeholder
+        // line to the recipe's real two - focusing and scrolling to the last one as if the user had
+        // just tapped "Aggiungi ingrediente".
+        viewModel(recipeId = "r-cake").uiState.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+
+            assertThat(state.lines).hasSize(2)
+            assertThat(state.justAddedLineId).isNull()
+        }
+    }
+
+    @Test
+    fun `adding a line marks only that line as just added, until the screen reports it handled`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+
+            vm.onAddLine()
+            advanceUntilIdle()
+            val afterAdd = expectMostRecentItem()
+            val newLineId = afterAdd.lines.last().id
+            assertThat(afterAdd.justAddedLineId).isEqualTo(newLineId)
+
+            vm.onNewLineFocusHandled()
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().justAddedLineId).isNull()
+        }
+    }
+
+    @Test
     fun `the first edit marks the draft dirty`() = runTest {
         val vm = viewModel()
         vm.uiState.test {

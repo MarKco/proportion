@@ -41,7 +41,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -99,6 +98,7 @@ fun EditorRoute(
         onLineQuantityChange = viewModel::onLineQuantityChange,
         onLineUnitChange = viewModel::onLineUnitChange,
         onAddLine = viewModel::onAddLine,
+        onNewLineFocusHandled = viewModel::onNewLineFocusHandled,
         onRemoveLine = viewModel::onRemoveLine,
         onStepChange = viewModel::onStepChange,
         onAddStep = viewModel::onAddStep,
@@ -121,6 +121,7 @@ fun EditorScreen(
     onLineQuantityChange: (Int, String) -> Unit,
     onLineUnitChange: (Int, com.ilsecondodasinistra.proportion.core.model.MeasureUnit) -> Unit,
     onAddLine: () -> Unit,
+    onNewLineFocusHandled: () -> Unit,
     onRemoveLine: (Int) -> Unit,
     onStepChange: (Int, String) -> Unit,
     onAddStep: () -> Unit,
@@ -134,15 +135,6 @@ fun EditorScreen(
     val leave = { if (state.isDirty) showDiscardDialog = true else onBack() }
 
     BackHandler(enabled = state.isDirty) { showDiscardDialog = true }
-
-    // Detects a line appended by "Aggiungi ingrediente" (onAddLine always appends at the end) so
-    // that one row alone gets focused and scrolled up, leaving room below it for suggestions.
-    var previousLineCount by remember { mutableIntStateOf(state.lines.size) }
-    var newlyAddedIndex by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(state.lines.size) {
-        newlyAddedIndex = if (state.lines.size > previousLineCount) state.lines.lastIndex else null
-        previousLineCount = state.lines.size
-    }
 
     Scaffold(
         modifier = Modifier.testTag("editor_screen"),
@@ -216,7 +208,8 @@ fun EditorScreen(
                     index = index,
                     line = line,
                     suggestions = if (state.suggestionLineIndex == index) state.suggestions else emptyList(),
-                    requestFocusAndScroll = index == newlyAddedIndex,
+                    requestFocusAndScroll = line.id == state.justAddedLineId,
+                    onFocusHandled = onNewLineFocusHandled,
                     onNameChange = onLineNameChange,
                     onSuggestionPick = onSuggestionPick,
                     onQuantityChange = onLineQuantityChange,
@@ -370,6 +363,7 @@ private fun IngredientEditorRow(
     line: EditorLine,
     suggestions: List<Ingredient>,
     requestFocusAndScroll: Boolean,
+    onFocusHandled: () -> Unit,
     onNameChange: (Int, String) -> Unit,
     onSuggestionPick: (Int, Ingredient) -> Unit,
     onQuantityChange: (Int, String) -> Unit,
@@ -426,6 +420,12 @@ private fun IngredientEditorRow(
             bringIntoViewRequester.bringIntoView(
                 Rect(0f, 0f, size.width.toFloat(), size.height + clearancePx),
             )
+
+            // Only now, not in the focus-request effect above: clearing the ViewModel's flag flips
+            // requestFocusAndScroll back to false on the next recomposition, and this effect (keyed
+            // on it) must still be running with it true until the scroll above has actually
+            // happened, or it would never get to run at all.
+            onFocusHandled()
         }
     }
 
