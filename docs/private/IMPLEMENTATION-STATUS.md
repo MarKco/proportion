@@ -134,7 +134,16 @@ note above), with real unit tests and a live on-device check for each:
   suggestion list appears/changes while typing, producing a visible scroll glitch on every letter
   typed. Fixed by reading the size as a plain polled value inside the effect instead of as a
   recomposition key, so the effect runs exactly once per focus request no matter how many times the
-  card resizes afterward.
+  card resizes afterward. **A fourth bug in the same area, found right after** (on-device, editing
+  an existing recipe): opening the editor for a saved recipe focused and over-scrolled to its last
+  ingredient line, sometimes pushing the field off-screen entirely. Cause: "newly added" was being
+  *inferred* from the line count going up, which also fires the moment an existing recipe's saved
+  lines finish loading (the draft starts as one placeholder line, then gets replaced by the
+  recipe's real ones — a legitimate increase, but not a user-triggered add). Fixed by having
+  `EditorViewModel.onAddLine` set an explicit `justAddedLineId` in the state instead of the screen
+  guessing from a size change; loading a recipe's saved lines never touches that field, so it can
+  no longer misfire. Two regression tests guard this: one confirms loading a recipe never sets it,
+  the other confirms `onAddLine` sets it to the right line and it clears once handled.
 - **The recipe detail screen has a standalone edit (pencil) button, top-right, always visible** —
   no need to open the overflow (⋮) menu first. The redundant "Modifica" entry was removed from that
   menu, which now holds only share/delete.
