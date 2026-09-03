@@ -16,8 +16,8 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -50,6 +52,7 @@ import com.ilsecondodasinistra.proportion.core.model.Recipe
 import com.ilsecondodasinistra.proportion.core.ui.component.EmptyState
 import com.ilsecondodasinistra.proportion.core.ui.component.SelectableTagChipRow
 import com.ilsecondodasinistra.proportion.core.ui.component.TagChipRow
+import com.ilsecondodasinistra.proportion.core.ui.tagAccentColor
 import com.ilsecondodasinistra.proportion.feature.recipes.R
 
 @Composable
@@ -265,13 +268,23 @@ private fun RecipeSort.labelRes(): Int = when (this) {
 
 @Composable
 private fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
-    Card(
+    val accentColor = recipe.tags.firstOrNull()?.let { tagAccentColor(it) }
+        ?: MaterialTheme.colorScheme.outlineVariant
+
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .testTag("recipe_card_${recipe.id}"),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        // drawBehind (not an accent Box next to the content) because a match-height sibling needs
+        // IntrinsicSize.Min, which crashes inside a LazyColumn's SubcomposeLayout.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind { drawRect(color = accentColor, size = Size(4.dp.toPx(), size.height)) }
+                .padding(start = 20.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
+        ) {
             Text(text = recipe.title, style = MaterialTheme.typography.titleMedium)
 
             Text(

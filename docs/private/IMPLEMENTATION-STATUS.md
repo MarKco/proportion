@@ -91,6 +91,17 @@ live device testing, and added imperial units on request.
   is now optional (only the big number stays inside the ring); `NumbersCard` shows "N ricette · N
   cotture registrate · N preferiti" as one row below the chart instead.
 
+**Editor: no unit pinned in advance, 2026-09-03.** A fresh ingredient line used to open with
+`GRAM` already selected, so typing "300" and then picking cups converted a number that had never
+been in grams (0.0125 cups). Now `EditorLine.unit` is nullable and starts null — the picker reads
+"Unità" until answered — and `EditorLine.isUnitChosen` separates the user's own pick from the unit
+the catalogue suggests on `onSuggestionPick`, which is treated as a hint. `onLineUnitChange`
+converts only when moving away from a unit the user picked themselves; the first deliberate pick
+takes the typed quantity at face value. Saving now requires a unit on every named line
+(`ValidationError.UNIT_REQUIRED`, `editor_error_unit` in both locales) rather than guessing —
+Marco's explicit choice over a silent catalogue-default fallback. `UnitPicker.selected` became
+nullable with an `emptyLabel`; Cook and Detail pass a real unit and are unaffected.
+
 **Note on tooling, 2026-09-03:** the `superpowers` Claude Code plugin (used for phases 6-8's
 brainstorm → spec → plan → subagent-driven-execution workflow) is now disabled — Marco turned it
 off, it was consuming too much context. Its written record survives on disk at `.superpowers/`

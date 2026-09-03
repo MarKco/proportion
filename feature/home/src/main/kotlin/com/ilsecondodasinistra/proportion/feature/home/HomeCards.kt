@@ -17,15 +17,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -44,7 +48,10 @@ fun NumbersCard(
     uncategorisedCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth().testTag("numbers_card")) {
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier = modifier.fillMaxWidth().testTag("numbers_card"),
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.home_numbers_title), style = MaterialTheme.typography.titleMedium)
 
@@ -130,7 +137,13 @@ fun ContinueCookingCard(
     onCook: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth().testTag("continue_cooking_card")) {
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        ),
+        modifier = modifier.fillMaxWidth().testTag("continue_cooking_card"),
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.home_continue_title), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -142,7 +155,7 @@ fun ContinueCookingCard(
                 Text(
                     text = stringResource(R.string.home_continue_showing, label),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = LocalContentColor.current.copy(alpha = 0.75f),
                 )
             }
             Button(
@@ -162,7 +175,13 @@ fun MostCookedCard(
     onRecipeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth().testTag("most_cooked_card")) {
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+        modifier = modifier.fillMaxWidth().testTag("most_cooked_card"),
+    ) {
         Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.home_most_cooked_title), style = MaterialTheme.typography.titleSmall)
@@ -200,8 +219,18 @@ fun SuggestionCard(
     onRecipeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth().testTag("suggestion_card")) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    val gradient = Brush.linearGradient(
+        listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer),
+    )
+
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        modifier = modifier.fillMaxWidth().testTag("suggestion_card"),
+    ) {
+        Column(modifier = Modifier.background(gradient).fillMaxWidth().padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -243,7 +272,7 @@ fun SuggestionCard(
                 when {
                     current != null -> Text(
                         text = current.title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onRecipeClick(current.recipeId) }
@@ -254,7 +283,7 @@ fun SuggestionCard(
                     suggestionUnavailable -> Text(
                         text = stringResource(R.string.home_suggestion_none),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = LocalContentColor.current.copy(alpha = 0.75f),
                         modifier = Modifier.padding(top = 16.dp).testTag("suggestion_none"),
                     )
 

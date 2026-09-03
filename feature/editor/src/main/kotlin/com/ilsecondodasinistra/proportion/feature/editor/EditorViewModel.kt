@@ -82,6 +82,9 @@ class EditorViewModel @Inject constructor(
                         name = line.ingredient.name,
                         quantity = line.quantity.toEditableText(),
                         unit = line.unit,
+                        // A saved line's unit is the user's own earlier answer, so changing it here
+                        // is a real unit change and does re-express the quantity.
+                        isUnitChosen = true,
                         note = line.note,
                     )
                 },
@@ -117,19 +120,20 @@ class EditorViewModel @Inject constructor(
     /**
      * Keeps whatever unit the line already had if it's still compatible with the picked
      * ingredient (same [com.ilsecondodasinistra.proportion.core.model.UnitCategory]) — e.g. the
-     * user already chose kilograms and picks a gram-default ingredient, kilograms stay. Only an
-     * incompatible unit (or the untouched default) gets replaced by the ingredient's own default.
+     * user already chose kilograms and picks a gram-default ingredient, kilograms stay. An empty
+     * or incompatible unit gets the ingredient's own default, as a hint only: it does not count as
+     * the user having chosen the unit, so the next pick still won't convert the typed quantity.
      */
     fun onSuggestionPick(index: Int, ingredient: Ingredient) = edit { state ->
         state.copy(
             lines = state.lines.mapIndexed { i, line ->
                 if (i == index) {
-                    val unit = if (line.unit.category == ingredient.defaultUnit.category) {
-                        line.unit
-                    } else {
-                        ingredient.defaultUnit
-                    }
-                    line.copy(name = ingredient.name, unit = unit)
+                    val kept = line.unit?.category == ingredient.defaultUnit.category
+                    line.copy(
+                        name = ingredient.name,
+                        unit = if (kept) line.unit else ingredient.defaultUnit,
+                        isUnitChosen = kept && line.isUnitChosen,
+                    )
                 } else {
                     line
                 }
@@ -154,24 +158,29 @@ class EditorViewModel @Inject constructor(
      * conversion would need, asks for it via [pendingDensityPrompt] instead of silently giving up —
      * unless the ingredient isn't in the catalogue at all yet (still being typed), in which case
      * there is nowhere to persist an answer and the quantity is simply left as typed.
+     *
+     * Answering the unit question for the first time is not a switch: the number was typed with no
+     * unit chosen (see [EditorLine.isUnitChosen]), so it means what it says and is left alone.
      */
     fun onLineUnitChange(index: Int, unit: MeasureUnit) {
         val line = _uiState.value.lines.getOrNull(index) ?: return
         val ingredient = catalogue.firstOrNull { it.normalisedName == IngredientNames.normalise(line.name) }
         val qty = line.quantity.parseQuantity()
+        // Only a unit the user picked themselves is something to convert away from.
+        val from = line.unit.takeIf { line.isUnitChosen }
 
-        if (qty == null || line.unit == unit) {
+        if (from == null || qty == null || from == unit) {
             setLineUnit(index, unit)
             return
         }
 
-        val converted = converter.convert(qty, line.unit, unit, ingredient?.toRef())
+        val converted = converter.convert(qty, from, unit, ingredient?.toRef())
         if (converted != null) {
             setLineUnit(index, unit, quantity = converted.toEditableText())
             return
         }
 
-        val requirement = requirementFor(line.unit, unit, ingredient?.toRef())
+        val requirement = requirementFor(from, unit, ingredient?.toRef())
         val recoverable = requirement != DensityRequirement.NONE && requirement != DensityRequirement.UNSUPPORTED
         if (ingredient == null || !recoverable) {
             setLineUnit(index, unit)
@@ -180,14 +189,16 @@ class EditorViewModel @Inject constructor(
 
         edit { state ->
             state.copy(
-                lines = state.lines.mapIndexed { i, l -> if (i == index) l.copy(unit = unit) else l },
+                lines = state.lines.mapIndexed { i, l ->
+                    if (i == index) l.copy(unit = unit, isUnitChosen = true) else l
+                },
                 pendingDensityPrompt = DensityPromptRequest(
                     lineIndex = index,
                     ingredientId = ingredient.id,
                     ingredientName = ingredient.name,
                     requirement = requirement,
                     qty = qty,
-                    fromUnit = line.unit,
+                    fromUnit = from,
                     toUnit = unit,
                 ),
             )
@@ -197,7 +208,11 @@ class EditorViewModel @Inject constructor(
     private fun setLineUnit(index: Int, unit: MeasureUnit, quantity: String? = null) = edit { state ->
         state.copy(
             lines = state.lines.mapIndexed { i, line ->
-                if (i == index) line.copy(unit = unit, quantity = quantity ?: line.quantity) else line
+                if (i == index) {
+                    line.copy(unit = unit, isUnitChosen = true, quantity = quantity ?: line.quantity)
+                } else {
+                    line
+                }
             },
         )
     }
@@ -302,23 +317,26 @@ class EditorViewModel @Inject constructor(
         val named = lines.filter { it.name.isNotBlank() }
         if (named.isEmpty()) add(ValidationError.INGREDIENTS_REQUIRED)
 
+        // A line with no unit yet is treated as scalable: it still needs a number.
         val missingQuantity = named.any { line ->
-            line.unit.isScalable && line.quantity.parseQuantity() == null
+            line.unit?.isScalable != false && line.quantity.parseQuantity() == null
         }
         if (missingQuantity) add(ValidationError.QUANTITY_REQUIRED)
+
+        if (named.any { it.unit == null }) add(ValidationError.UNIT_REQUIRED)
     }
 
     private suspend fun EditorUiState.toRecipe(): Recipe {
         val ingredients = lines
-            .filter { it.name.isNotBlank() }
-            .mapIndexed { position, line ->
-                val ingredient = ingredientRepository.findOrCreate(line.name, line.unit)
+            .mapNotNull { line -> line.unit?.takeIf { line.name.isNotBlank() }?.let { line to it } }
+            .mapIndexed { position, (line, unit) ->
+                val ingredient = ingredientRepository.findOrCreate(line.name, unit)
                 RecipeIngredient(
                     id = line.id,
                     ingredient = ingredient,
                     position = position,
-                    quantity = if (line.unit.isScalable) line.quantity.parseQuantity() else null,
-                    unit = line.unit,
+                    quantity = if (unit.isScalable) line.quantity.parseQuantity() else null,
+                    unit = unit,
                     note = line.note?.takeIf { it.isNotBlank() },
                 )
             }

@@ -69,7 +69,7 @@ fun HomeScreen(
                         Image(
                             painter = painterResource(DesignSystemR.drawable.ic_app_logo),
                             contentDescription = null,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(40.dp),
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.home_title))

@@ -15,12 +15,14 @@
     <string name="editor_new_tag">Nuovo tag</string>
     <string name="editor_ingredient_name">Ingrediente</string>
     <string name="editor_quantity">Quantità</string>
+    <string name="editor_unit_unset">Unità</string>
     <string name="editor_remove">Rimuovi</string>
     <string name="editor_save">Salva</string>
     <string name="editor_back">Indietro</string>
     <string name="editor_error_title">Dai un nome alla ricetta</string>
     <string name="editor_error_ingredients">Aggiungi almeno un ingrediente</string>
     <string name="editor_error_quantity">Inserisci una quantità, oppure scegli un\'unità approssimativa</string>
+    <string name="editor_error_unit">Scegli un\'unità di misura per ogni ingrediente</string>
     <string name="editor_discard_title">Scartare le modifiche?</string>
     <string name="editor_discard_message">Le modifiche fatte andranno perse.</string>
     <string name="editor_discard_confirm">Scarta</string>

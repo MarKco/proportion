@@ -3,7 +3,9 @@ package com.ilsecondodasinistra.proportion.core.ui
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionChartColors
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Tag
 import com.ilsecondodasinistra.proportion.core.model.UnitCategory
@@ -34,6 +36,9 @@ fun tagLabel(tag: Tag): String {
         else -> tag.name ?: tag.key.orEmpty()
     }
 }
+
+/** Same palette the home dashboard's donut chart uses, so a tag reads as one colour everywhere. */
+fun tagAccentColor(tag: Tag): Color = ProPortionChartColors[tag.colorIndex.mod(ProPortionChartColors.size)]
 
 @StringRes
 fun unitCategoryLabelRes(category: UnitCategory): Int = when (category) {

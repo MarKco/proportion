@@ -285,6 +285,9 @@ fun EditorScreen(
             if (ValidationError.QUANTITY_REQUIRED in state.errors) {
                 ErrorText(stringResource(R.string.editor_error_quantity))
             }
+            if (ValidationError.UNIT_REQUIRED in state.errors) {
+                ErrorText(stringResource(R.string.editor_error_unit))
+            }
 
             state.lines.forEachIndexed { index, line ->
                 IngredientEditorRow(
@@ -623,7 +626,7 @@ private fun IngredientEditorRow(
                         onValueChange = { onQuantityChange(index, it) },
                         label = { Text(stringResource(R.string.editor_quantity)) },
                         singleLine = true,
-                        enabled = line.unit.isScalable,
+                        enabled = line.unit?.isScalable != false,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.width(140.dp).testTag("editor_line_qty_$index"),
                     )
@@ -631,6 +634,7 @@ private fun IngredientEditorRow(
                         selected = line.unit,
                         unitName = { unit -> unitLabel(unit) },
                         onSelect = { onUnitChange(index, it) },
+                        emptyLabel = stringResource(R.string.editor_unit_unset),
                     )
                 }
             }

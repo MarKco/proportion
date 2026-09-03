@@ -26,9 +26,10 @@ import com.ilsecondodasinistra.proportion.core.ui.unitsByCategory
  */
 @Composable
 fun UnitPicker(
-    selected: MeasureUnit,
+    selected: MeasureUnit?,
     unitName: @Composable (MeasureUnit) -> String,
     onSelect: (MeasureUnit) -> Unit,
+    emptyLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -37,7 +38,8 @@ fun UnitPicker(
         onClick = { expanded = true },
         modifier = modifier.testTag("unit_picker"),
     ) {
-        Text(unitName(selected))
+        // No unit chosen yet: the button asks the question instead of answering it for the user.
+        Text(if (selected != null) unitName(selected) else emptyLabel.orEmpty())
     }
 
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

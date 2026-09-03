@@ -5,12 +5,20 @@ import com.ilsecondodasinistra.proportion.core.model.Ingredient
 import com.ilsecondodasinistra.proportion.core.model.MeasureUnit
 import com.ilsecondodasinistra.proportion.core.model.Tag
 
-/** One editable ingredient row. Quantity stays text until save, so typing "1," is not an error. */
+/**
+ * One editable ingredient row. Quantity stays text until save, so typing "1," is not an error.
+ *
+ * [unit] is null on a fresh line: pinning a default in advance turns "type 300, then pick cups"
+ * into a conversion of a number that was never in grams. [isUnitChosen] is the same idea one step
+ * further — a unit the catalogue suggested (see [EditorViewModel.onSuggestionPick]) is a hint, not
+ * the user's answer, so the first deliberate pick still takes the quantity at face value.
+ */
 data class EditorLine(
     val id: String,
     val name: String = "",
     val quantity: String = "",
-    val unit: MeasureUnit = MeasureUnit.GRAM,
+    val unit: MeasureUnit? = null,
+    val isUnitChosen: Boolean = false,
     val note: String? = null,
 )
 
@@ -33,6 +41,7 @@ enum class ValidationError {
     TITLE_REQUIRED,
     INGREDIENTS_REQUIRED,
     QUANTITY_REQUIRED,
+    UNIT_REQUIRED,
 }
 
 data class EditorUiState(

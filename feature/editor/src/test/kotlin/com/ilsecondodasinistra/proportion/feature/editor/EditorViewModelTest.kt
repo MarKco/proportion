@@ -49,6 +49,88 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `a new line has no unit until one is picked`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().lines.single().unit).isNull()
+
+            vm.onAddLine()
+            advanceUntilIdle()
+            assertThat(expectMostRecentItem().lines.last().unit).isNull()
+        }
+    }
+
+    @Test
+    fun `picking a line's first unit takes the typed quantity at face value`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onLineQuantityChange(0, "300")
+            vm.onLineUnitChange(0, MeasureUnit.MILLILITRE)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            // 300 was typed under no unit at all: it means 300 ml, not 300 g converted to ml.
+            assertThat(state.lines.single().quantity).isEqualTo("300")
+            assertThat(state.lines.single().unit).isEqualTo(MeasureUnit.MILLILITRE)
+            assertThat(state.pendingDensityPrompt).isNull()
+        }
+    }
+
+    @Test
+    fun `changing a unit the user already picked does convert the quantity`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onLineQuantityChange(0, "300")
+            vm.onLineUnitChange(0, MeasureUnit.GRAM)
+            vm.onLineUnitChange(0, MeasureUnit.KILOGRAM)
+            advanceUntilIdle()
+
+            val line = expectMostRecentItem().lines.single()
+            assertThat(line.unit).isEqualTo(MeasureUnit.KILOGRAM)
+            assertThat(line.quantity.replace(',', '.').toDouble()).isWithin(0.0001).of(0.3)
+        }
+    }
+
+    @Test
+    fun `a suggestion's unit is only a hint, so the first deliberate pick still does not convert`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+
+            vm.onSuggestionPick(0, EditorTestData.flour)
+            vm.onLineQuantityChange(0, "300")
+            vm.onLineUnitChange(0, MeasureUnit.CUP)
+            advanceUntilIdle()
+
+            val state = expectMostRecentItem()
+            assertThat(state.lines.single().unit).isEqualTo(MeasureUnit.CUP)
+            assertThat(state.lines.single().quantity).isEqualTo("300")
+            assertThat(state.pendingDensityPrompt).isNull()
+        }
+    }
+
+    @Test
+    fun `saving a line without a unit reports the error and writes nothing`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onTitleChange("Pane")
+            vm.onLineNameChange(0, "Farina 00")
+            vm.onLineQuantityChange(0, "500")
+            vm.onSave()
+            advanceUntilIdle()
+
+            assertThat(expectMostRecentItem().errors).containsExactly(ValidationError.UNIT_REQUIRED)
+        }
+        assertThat(recipes.saved).isEmpty()
+    }
+
+    @Test
     fun `editing an existing recipe loads its lines in order`() = runTest {
         viewModel(recipeId = "r-cake").uiState.test {
             advanceUntilIdle()
@@ -166,6 +248,7 @@ class EditorViewModelTest {
             vm.onServingsChange(6)
             vm.onLineNameChange(0, "Farina 00")
             vm.onLineQuantityChange(0, "250")
+            vm.onLineUnitChange(0, MeasureUnit.GRAM)
             vm.onAddLine()
             vm.onLineNameChange(1, "Uova")
             vm.onLineQuantityChange(1, "3")
@@ -214,6 +297,7 @@ class EditorViewModelTest {
             vm.onTitleChange("Risotto")
             vm.onLineNameChange(0, "Riso Carnaroli")
             vm.onLineQuantityChange(0, "320")
+            vm.onLineUnitChange(0, MeasureUnit.GRAM)
             vm.onSave()
             advanceUntilIdle()
             cancelAndIgnoreRemainingEvents()
@@ -330,6 +414,7 @@ class EditorViewModelTest {
             vm.onTitleChange("Pane")
             vm.onLineNameChange(0, "Farina 00")
             vm.onLineQuantityChange(0, "500")
+            vm.onLineUnitChange(0, MeasureUnit.GRAM)
             vm.onSave()
             advanceUntilIdle()
 
