@@ -366,24 +366,24 @@ class EditorViewModel @Inject constructor(
         }
     }
 
-    private fun <T> List<T>.moved(from: Int, to: Int): List<T> {
-        if (from !in indices || to !in indices || from == to) return this
-        return toMutableList().apply { add(to, removeAt(from)) }
-    }
-
-    /** Accepts both decimal separators: an Italian keyboard offers the comma. */
-    private fun String.parseQuantity(): Double? =
-        trim().replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 }
-
-    private fun Double?.toEditableText(): String = when {
-        this == null -> ""
-        this % 1.0 == 0.0 -> toInt().toString()
-        else -> toString()
-    }
-
-    private fun newLineId(): String = UUID.randomUUID().toString()
-
     private companion object {
         const val MAX_SUGGESTIONS = 5
     }
 }
+
+private fun <T> List<T>.moved(from: Int, to: Int): List<T> {
+    if (from !in indices || to !in indices || from == to) return this
+    return toMutableList().apply { add(to, removeAt(from)) }
+}
+
+/** Accepts both decimal separators: an Italian keyboard offers the comma. */
+private fun String.parseQuantity(): Double? =
+    trim().replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 }
+
+private fun Double?.toEditableText(): String = when {
+    this == null -> ""
+    this % 1.0 == 0.0 -> toInt().toString()
+    else -> toString()
+}
+
+private fun newLineId(): String = UUID.randomUUID().toString()
