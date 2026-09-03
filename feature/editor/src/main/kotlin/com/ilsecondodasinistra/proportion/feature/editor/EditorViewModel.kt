@@ -266,7 +266,13 @@ class EditorViewModel @Inject constructor(
         state.copy(steps = state.steps.mapIndexed { i, step -> if (i == index) text else step })
     }
 
-    fun onAddStep() = edit { it.copy(steps = it.steps + "") }
+    fun onAddStep() = edit { state ->
+        val steps = state.steps + ""
+        state.copy(steps = steps, justAddedStepIndex = steps.lastIndex)
+    }
+
+    /** Called once the screen has focused the step [onAddStep] just added. */
+    fun onNewStepFocusHandled() = edit { it.copy(justAddedStepIndex = null) }
 
     fun onRemoveStep(index: Int) = edit { state ->
         val remaining = state.steps.filterIndexed { i, _ -> i != index }

@@ -67,6 +67,12 @@ data class EditorUiState(
      * the screen once it has acted on it.
      */
     val justAddedLineId: String? = null,
+    /**
+     * Same idea as [justAddedLineId] but for [steps], which have no stable id: set by
+     * [EditorViewModel.onAddStep] to the index it just appended, so the screen can focus that row
+     * without guessing from a count change. Cleared by the screen once it has acted on it.
+     */
+    val justAddedStepIndex: Int? = null,
     /** Set when a unit change needs density/item-weight data the ingredient doesn't have yet. */
     val pendingDensityPrompt: DensityPromptRequest? = null,
 ) {

@@ -37,6 +37,7 @@ class EditorScreenTest {
                     onRemoveLine = {},
                     onStepChange = { _, _ -> },
                     onAddStep = {},
+                    onNewStepFocusHandled = {},
                     onRemoveStep = {},
                     onTagToggle = {},
                     onCreateTag = {},

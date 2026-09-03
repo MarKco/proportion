@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -58,6 +59,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -114,6 +116,7 @@ fun EditorRoute(
         onRemoveLine = viewModel::onRemoveLine,
         onStepChange = viewModel::onStepChange,
         onAddStep = viewModel::onAddStep,
+        onNewStepFocusHandled = viewModel::onNewStepFocusHandled,
         onRemoveStep = viewModel::onRemoveStep,
         onTagToggle = viewModel::onTagToggle,
         onCreateTag = viewModel::onCreateTag,
@@ -139,6 +142,7 @@ fun EditorScreen(
     onRemoveLine: (Int) -> Unit,
     onStepChange: (Int, String) -> Unit,
     onAddStep: () -> Unit,
+    onNewStepFocusHandled: () -> Unit,
     onRemoveStep: (Int) -> Unit,
     onTagToggle: (String) -> Unit,
     onCreateTag: (String) -> Unit,
@@ -317,21 +321,26 @@ fun EditorScreen(
             }
 
             SectionTitle(stringResource(R.string.editor_section_steps))
+            // Recreated whenever the step count changes; stable across recompositions triggered by
+            // typing, since those don't change state.steps.size.
+            val stepFocusRequesters = remember(state.steps.size) { List(state.steps.size) { FocusRequester() } }
             state.steps.forEachIndexed { index, step ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = step,
-                        onValueChange = { onStepChange(index, it) },
-                        label = { Text(stringResource(R.string.editor_step_number, index + 1)) },
-                        modifier = Modifier.weight(1f).testTag("editor_step_$index"),
-                    )
-                    IconButton(onClick = { onRemoveStep(index) }) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = stringResource(R.string.editor_remove),
-                        )
-                    }
-                }
+                StepEditorRow(
+                    index = index,
+                    step = step,
+                    requestFocus = index == state.justAddedStepIndex,
+                    focusRequester = stepFocusRequesters[index],
+                    onFocusHandled = onNewStepFocusHandled,
+                    onStepChange = onStepChange,
+                    onRemoveStep = { onRemoveStep(index) },
+                    onNext = {
+                        if (index == state.steps.lastIndex) {
+                            onAddStep()
+                        } else {
+                            stepFocusRequesters[index + 1].requestFocus()
+                        }
+                    },
+                )
             }
 
             TextButton(onClick = onAddStep, modifier = Modifier.testTag("editor_add_step")) {
@@ -644,6 +653,43 @@ private fun IngredientEditorRow(
         // brings into view along with the card, and that the suggestion chips then grow into.
         if (spacerHeight > 0.dp) {
             Spacer(modifier = Modifier.height(spacerHeight))
+        }
+    }
+}
+
+@Composable
+private fun StepEditorRow(
+    index: Int,
+    step: String,
+    requestFocus: Boolean,
+    focusRequester: FocusRequester,
+    onFocusHandled: () -> Unit,
+    onStepChange: (Int, String) -> Unit,
+    onRemoveStep: () -> Unit,
+    onNext: () -> Unit,
+) {
+    LaunchedEffect(requestFocus) {
+        if (requestFocus) {
+            focusRequester.requestFocus()
+            onFocusHandled()
+        }
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = step,
+            onValueChange = { onStepChange(index, it) },
+            label = { Text(stringResource(R.string.editor_step_number, index + 1)) },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { onNext() }),
+            modifier = Modifier.weight(1f).testTag("editor_step_$index")
+                .focusRequester(focusRequester),
+        )
+        IconButton(onClick = onRemoveStep) {
+            Icon(
+                Icons.Filled.Delete,
+                contentDescription = stringResource(R.string.editor_remove),
+            )
         }
     }
 }
