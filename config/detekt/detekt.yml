@@ -15,8 +15,11 @@ complexity:
     ignoreAnnotatedFunctions: ['Composable']
   LongParameterList:
     # Room DAO queries take many parameters, and a stateless composable takes one lambda per event.
+    # SyncRepositoryImpl's 9 constructor params are the same story: 3 DAOs it coordinates across
+    # plus the sync dirty-check cache DAO, transfer/preferences/log/clock and context — genuinely
+    # separate collaborators, not a design smell a wrapper would fix.
     functionThreshold: 9
-    constructorThreshold: 9
+    constructorThreshold: 10
     ignoreAnnotated: ['Composable']
   LongMethod:
     # A composable's body is a layout tree, not branching logic; splitting it by line count alone

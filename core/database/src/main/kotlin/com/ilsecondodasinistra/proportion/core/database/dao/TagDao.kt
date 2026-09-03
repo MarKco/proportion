@@ -19,8 +19,8 @@ interface TagDao {
     suspend fun findById(id: String): TagEntity?
 
     /** Folder sync (phase 10) only: literal rows are what travels — built-ins never do. */
-    @Query("SELECT id FROM tags WHERE is_built_in = 0")
-    suspend fun allLiteralIds(): List<String>
+    @Query("SELECT id, updated_at AS updatedAt FROM tags WHERE is_built_in = 0")
+    suspend fun allLiteralIdsWithUpdatedAt(): List<SyncableEntityId>
 
     @Upsert
     suspend fun upsert(tag: TagEntity)

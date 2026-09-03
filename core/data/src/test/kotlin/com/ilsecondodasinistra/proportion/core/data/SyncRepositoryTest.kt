@@ -60,6 +60,9 @@ private class FakePreferencesRepository(initial: UserPreferences) : PreferencesR
     override suspend fun setSyncFolderUri(uri: String?) {
         state.value = state.value.copy(syncFolderUri = uri)
     }
+    override suspend fun setSyncIntervalHours(hours: Int) {
+        state.value = state.value.copy(syncIntervalHours = hours)
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
@@ -112,6 +115,7 @@ class SyncRepositoryTest {
             recipeDao = db.recipeDao(),
             ingredientDao = db.ingredientDao(),
             tagDao = db.tagDao(),
+            syncCacheDao = db.syncCacheDao(),
             transferRepository = transfer,
             preferencesRepository = preferences,
             syncLog = syncLog,
@@ -158,6 +162,53 @@ class SyncRepositoryTest {
         assertThat(result.exported).isAtLeast(1)
         assertThat(folderFile("recipe-r-cake.proportion").exists()).isTrue()
         assertThat(folderFile("recipe-r-cake.proportion").readText()).contains("Torta")
+    }
+
+    @Test
+    fun `a second syncNow with nothing changed does not rewrite the recipe file`() = runTest {
+        storeCake()
+        sync.syncNow()
+        val writtenAt = folderFile("recipe-r-cake.proportion").lastModified()
+
+        val result = sync.syncNow()
+
+        assertThat(result.exported).isEqualTo(0)
+        assertThat(folderFile("recipe-r-cake.proportion").lastModified()).isEqualTo(writtenAt)
+    }
+
+    @Test
+    fun `editing a recipe after a sync still re-exports it`() = runTest {
+        storeCake()
+        sync.syncNow()
+
+        now = 2_000L
+        recipes.upsert(recipes.observeRecipe("r-cake").first()!!.copy(title = "Torta aggiornata"))
+        val result = sync.syncNow()
+
+        assertThat(result.exported).isAtLeast(1)
+        assertThat(folderFile("recipe-r-cake.proportion").readText()).contains("Torta aggiornata")
+    }
+
+    @Test
+    fun `an unchanged file is not re-read once the pull cache has warmed up`() = runTest {
+        storeCake()
+        sync.syncNow() // run 1: first push creates the file.
+        // run 2: pull sees its own freshly-created file for the first time (cache miss, harmless
+        // Skip since it's this device's own unchanged content) and caches its mtime; push then
+        // skips it (unchanged since run 1) so the file stops moving from here on.
+        sync.syncNow()
+        val file = folderFile("recipe-r-cake.proportion")
+        val stableMtime = file.lastModified()
+        val logCountBeforeTamper = syncLog.entries.first().size
+
+        // Corrupt the file without touching its mtime: a re-read would log a parse error.
+        file.writeText("not valid json")
+        file.setLastModified(stableMtime)
+
+        sync.syncNow() // run 3: mtime unchanged from the cache set in run 2 -> must not re-read it.
+
+        val newEntries = syncLog.entries.first().drop(logCountBeforeTamper)
+        assertThat(newEntries.none { it.isError }).isTrue()
     }
 
     @Test
@@ -260,6 +311,8 @@ class SyncRepositoryTest {
         sync.syncNow()
 
         assertThat(folderFile("recipe-r-cake.proportion").exists()).isFalse()
+        assertThat(db.syncCacheDao().exportedUpdatedAt("r-cake")).isNull()
+        assertThat(db.syncCacheDao().seenMtime("recipe-r-cake.proportion")).isNull()
     }
 
     /** A `.proportion` recipe file as if written by a second device — not this one's repositories. */

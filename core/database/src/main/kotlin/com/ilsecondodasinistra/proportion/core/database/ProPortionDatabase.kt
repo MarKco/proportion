@@ -10,6 +10,7 @@ import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.RecipeDao
 import com.ilsecondodasinistra.proportion.core.database.dao.ScaleVariantDao
 import com.ilsecondodasinistra.proportion.core.database.dao.ShoppingDao
+import com.ilsecondodasinistra.proportion.core.database.dao.SyncCacheDao
 import com.ilsecondodasinistra.proportion.core.database.dao.TagDao
 import com.ilsecondodasinistra.proportion.core.database.entity.IngredientEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.RecipeEntity
@@ -17,6 +18,8 @@ import com.ilsecondodasinistra.proportion.core.database.entity.RecipeIngredientE
 import com.ilsecondodasinistra.proportion.core.database.entity.RecipeTagCrossRef
 import com.ilsecondodasinistra.proportion.core.database.entity.ScaleVariantEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.ShoppingItemEntity
+import com.ilsecondodasinistra.proportion.core.database.entity.SyncExportCacheEntity
+import com.ilsecondodasinistra.proportion.core.database.entity.SyncSeenFileEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.TagEntity
 import com.ilsecondodasinistra.proportion.core.model.Tag
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -32,8 +35,10 @@ import kotlinx.serialization.json.decodeFromStream
         RecipeTagCrossRef::class,
         ScaleVariantEntity::class,
         ShoppingItemEntity::class,
+        SyncExportCacheEntity::class,
+        SyncSeenFileEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -44,6 +49,7 @@ abstract class ProPortionDatabase : RoomDatabase() {
     abstract fun tagDao(): TagDao
     abstract fun scaleVariantDao(): ScaleVariantDao
     abstract fun shoppingDao(): ShoppingDao
+    abstract fun syncCacheDao(): SyncCacheDao
 
     companion object {
 
@@ -161,5 +167,28 @@ class Migration3to4 : Migration(SCHEMA_3, SCHEMA_4) {
     private companion object {
         const val SCHEMA_3 = 3
         const val SCHEMA_4 = 4
+    }
+}
+
+/**
+ * Adds the folder sync (phase 10) dirty-check cache: two small tables that let a sync run skip
+ * re-exporting a local row or re-reading a remote file when neither has changed since the last
+ * run. See [SyncExportCacheEntity]/[SyncSeenFileEntity].
+ */
+class Migration4to5 : Migration(SCHEMA_4, SCHEMA_5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS sync_export_cache (" +
+                "entity_id TEXT NOT NULL PRIMARY KEY, exported_updated_at INTEGER NOT NULL)",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS sync_seen_file (" +
+                "file_name TEXT NOT NULL PRIMARY KEY, last_modified INTEGER NOT NULL)",
+        )
+    }
+
+    private companion object {
+        const val SCHEMA_4 = 4
+        const val SCHEMA_5 = 5
     }
 }

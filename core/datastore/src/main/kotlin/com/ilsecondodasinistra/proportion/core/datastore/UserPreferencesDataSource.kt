@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ilsecondodasinistra.proportion.core.model.AppTheme
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
@@ -35,6 +36,7 @@ class UserPreferencesDataSource @Inject constructor(
                 ?: AppTheme.PASTEL,
             syncEnabled = stored[SYNC_ENABLED] ?: false,
             syncFolderUri = stored[SYNC_FOLDER_URI],
+            syncIntervalHours = stored[SYNC_INTERVAL_HOURS] ?: 4,
         )
     }
 
@@ -61,11 +63,16 @@ class UserPreferencesDataSource @Inject constructor(
         }
     }
 
+    suspend fun setSyncIntervalHours(hours: Int) {
+        store.edit { it[SYNC_INTERVAL_HOURS] = hours }
+    }
+
     private companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOUR = booleanPreferencesKey("dynamic_colour")
         val APP_THEME = stringPreferencesKey("app_theme")
         val SYNC_ENABLED = booleanPreferencesKey("sync_enabled")
         val SYNC_FOLDER_URI = stringPreferencesKey("sync_folder_uri")
+        val SYNC_INTERVAL_HOURS = intPreferencesKey("sync_interval_hours")
     }
 }

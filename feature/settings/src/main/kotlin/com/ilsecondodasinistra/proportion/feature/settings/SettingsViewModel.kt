@@ -65,6 +65,7 @@ class SettingsViewModel @Inject constructor(
                         appTheme = preferences.appTheme,
                         syncEnabled = preferences.syncEnabled,
                         syncFolderUri = preferences.syncFolderUri,
+                        syncIntervalHours = preferences.syncIntervalHours,
                     )
                 }
             }
@@ -166,11 +167,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesRepository.setSyncEnabled(enabled)
             if (enabled) {
-                syncScheduler.schedule()
+                syncScheduler.schedule(_uiState.value.syncIntervalHours)
                 if (_uiState.value.syncFolderUri != null) runSyncNow()
             } else {
                 syncScheduler.cancel()
             }
+        }
+    }
+
+    /** Takes effect immediately when sync is on — see [SyncScheduler.schedule]. */
+    fun onSyncIntervalChange(hours: Int) {
+        viewModelScope.launch {
+            preferencesRepository.setSyncIntervalHours(hours)
+            if (_uiState.value.syncEnabled) syncScheduler.schedule(hours)
         }
     }
 

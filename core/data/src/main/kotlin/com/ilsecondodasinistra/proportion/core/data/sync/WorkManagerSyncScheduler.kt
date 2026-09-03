@@ -13,12 +13,14 @@ class WorkManagerSyncScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : SyncScheduler {
 
-    override fun schedule() {
-        val request = PeriodicWorkRequestBuilder<SyncWorker>(SYNC_INTERVAL_HOURS, TimeUnit.HOURS).build()
-        // KEEP, not REPLACE: flipping the toggle off and back on must not reset the interval clock
-        // or duplicate the job — the existing periodic work (if any) is left running as-is.
+    override fun schedule(intervalHours: Int) {
+        val request = PeriodicWorkRequestBuilder<SyncWorker>(intervalHours.toLong(), TimeUnit.HOURS).build()
+        // UPDATE, not KEEP: the user can change the interval from settings and expects it to take
+        // effect without waiting for the currently-running period to elapse. WorkManager applies
+        // the new period without dropping the job's identity, so flipping the toggle off and back
+        // on with the same interval already in effect still doesn't reset anything meaningful.
         WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+            .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
     override fun cancel() {
@@ -27,6 +29,5 @@ class WorkManagerSyncScheduler @Inject constructor(
 
     private companion object {
         const val WORK_NAME = "proportion-folder-sync"
-        const val SYNC_INTERVAL_HOURS = 4L
     }
 }

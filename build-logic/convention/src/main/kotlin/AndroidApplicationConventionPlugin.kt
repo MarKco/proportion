@@ -18,8 +18,8 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 applicationId = "com.ilsecondodasinistra.proportion"
                 minSdk = ProportionVersions.MIN_SDK
                 targetSdk = ProportionVersions.TARGET_SDK
-                versionCode = 1
-                versionName = "1.0"
+                versionCode = 2
+                versionName = "2.0"
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             }
 

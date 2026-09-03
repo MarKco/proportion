@@ -151,6 +151,34 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun `migrating from version 4 creates the sync cache tables, empty and usable`() {
+        helper.createDatabase(TEST_DB, 4).close()
+
+        val v5 = helper.runMigrationsAndValidate(TEST_DB, 5, true, Migration4to5())
+
+        v5.execSQL(
+            "INSERT INTO sync_export_cache (entity_id, exported_updated_at) VALUES ('r-cake', 100)",
+        )
+        v5.execSQL(
+            "INSERT INTO sync_seen_file (file_name, last_modified) VALUES ('recipe-r-cake.proportion', 200)",
+        )
+
+        val exportCache = v5.query("SELECT exported_updated_at FROM sync_export_cache WHERE entity_id = 'r-cake'")
+        exportCache.use {
+            assertThat(it.moveToFirst()).isTrue()
+            assertThat(it.getLong(it.getColumnIndexOrThrow("exported_updated_at"))).isEqualTo(100L)
+        }
+
+        val seenFile = v5.query(
+            "SELECT last_modified FROM sync_seen_file WHERE file_name = 'recipe-r-cake.proportion'",
+        )
+        seenFile.use {
+            assertThat(it.moveToFirst()).isTrue()
+            assertThat(it.getLong(it.getColumnIndexOrThrow("last_modified"))).isEqualTo(200L)
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

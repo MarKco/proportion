@@ -8,11 +8,13 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.google.common.truth.Truth.assertThat
 import com.ilsecondodasinistra.proportion.core.designsystem.theme.ProPortionTheme
 import com.ilsecondodasinistra.proportion.core.model.AppTheme
+import com.ilsecondodasinistra.proportion.core.model.SyncLogEntry
 import com.ilsecondodasinistra.proportion.core.model.ThemeMode
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +37,7 @@ class SettingsScreenTest {
     private var dynamicColourChanged: Boolean? = null
     private var appThemeChanged: AppTheme? = null
     private var languageChanged: AppLanguage? = null
+    private var syncIntervalChanged: Int? = null
 
     private fun render(state: SettingsUiState) {
         composeTestRule.setContent {
@@ -54,6 +57,7 @@ class SettingsScreenTest {
                     onDismissRestore = {},
                     onSyncEnabledChange = {},
                     onChooseFolderClick = {},
+                    onSyncIntervalChange = { syncIntervalChanged = it },
                     onSyncNowClick = {},
                     onShareLogClick = {},
                 )
@@ -128,5 +132,38 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithTag("language_ENGLISH").performScrollTo().performClick()
 
         assertThat(languageChanged).isEqualTo(AppLanguage.ENGLISH)
+    }
+
+    @Test
+    fun `the selected sync interval row reports itself as selected`() {
+        render(SettingsUiState(syncEnabled = true, syncIntervalHours = 8))
+
+        composeTestRule.onNodeWithTag("sync_interval_8h").performScrollTo().assertIsSelected()
+        composeTestRule.onNodeWithTag("sync_interval_4h").performScrollTo().assertIsNotSelected()
+    }
+
+    @Test
+    fun `tapping a sync interval row reports the tapped interval`() {
+        render(SettingsUiState(syncEnabled = true, syncIntervalHours = 4))
+
+        composeTestRule.onNodeWithTag("sync_interval_12h").performScrollTo().performClick()
+
+        assertThat(syncIntervalChanged).isEqualTo(12)
+    }
+
+    @Test
+    fun `the last sync log entry is shown with its message`() {
+        val entry = SyncLogEntry(timestamp = 1_700_000_000_000, message = "Sync completata", isError = false)
+        render(SettingsUiState(syncEnabled = true, syncLog = listOf(entry)))
+
+        composeTestRule.onNodeWithTag("sync_last_run_item").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Sync completata").assertExists()
+    }
+
+    @Test
+    fun `no last-run item is shown before any sync has ever happened`() {
+        render(SettingsUiState(syncEnabled = true, syncLog = emptyList()))
+
+        composeTestRule.onNodeWithTag("sync_last_run_item").assertDoesNotExist()
     }
 }

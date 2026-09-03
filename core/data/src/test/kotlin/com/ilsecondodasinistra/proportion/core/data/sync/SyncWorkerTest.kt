@@ -27,6 +27,7 @@ private class FakePreferencesRepository(syncEnabled: Boolean) : PreferencesRepos
     override suspend fun setAppTheme(theme: AppTheme) = Unit
     override suspend fun setSyncEnabled(enabled: Boolean) = Unit
     override suspend fun setSyncFolderUri(uri: String?) = Unit
+    override suspend fun setSyncIntervalHours(hours: Int) = Unit
 }
 
 private class FakeSyncRepository(private val onSyncNow: suspend () -> SyncResult) : SyncRepository {

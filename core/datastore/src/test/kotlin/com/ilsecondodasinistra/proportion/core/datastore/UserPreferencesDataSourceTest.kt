@@ -57,11 +57,19 @@ class UserPreferencesDataSourceTest {
     }
 
     @Test
-    fun `sync is off with no folder chosen by default`() = runTest {
+    fun `sync is off with no folder chosen by default, every 4 hours`() = runTest {
         val prefs = dataSource.preferences.first()
 
         assertThat(prefs.syncEnabled).isFalse()
         assertThat(prefs.syncFolderUri).isNull()
+        assertThat(prefs.syncIntervalHours).isEqualTo(4)
+    }
+
+    @Test
+    fun `the chosen sync interval survives a read back`() = runTest {
+        dataSource.setSyncIntervalHours(12)
+
+        assertThat(dataSource.preferences.first().syncIntervalHours).isEqualTo(12)
     }
 
     @Test

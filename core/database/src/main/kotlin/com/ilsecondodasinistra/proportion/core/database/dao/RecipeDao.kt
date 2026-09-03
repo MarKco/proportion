@@ -130,8 +130,8 @@ abstract class RecipeDao {
     abstract suspend fun existingIds(ids: List<String>): List<String>
 
     /** Folder sync (phase 10) only: every recipe, tombstones included — the export-everything pass. */
-    @Query("SELECT id FROM recipes")
-    abstract suspend fun allIds(): List<String>
+    @Query("SELECT id, updated_at AS updatedAt FROM recipes")
+    abstract suspend fun allIdsWithUpdatedAt(): List<SyncableEntityId>
 
     /** Folder sync (phase 10) only: tombstones old enough for the sync cleanup pass to hard-delete. */
     @Query("SELECT id FROM recipes WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff")

@@ -6,7 +6,11 @@ package com.ilsecondodasinistra.proportion.core.domain
  * `WorkManager` underneath.
  */
 interface SyncScheduler {
-    /** Idempotent: calling this while already scheduled changes nothing. */
-    fun schedule()
+    /**
+     * Idempotent for the same [intervalHours]: calling this again with the value already in
+     * effect changes nothing. A different value takes effect on this call, without waiting for
+     * the interval currently running to elapse.
+     */
+    fun schedule(intervalHours: Int)
     fun cancel()
 }

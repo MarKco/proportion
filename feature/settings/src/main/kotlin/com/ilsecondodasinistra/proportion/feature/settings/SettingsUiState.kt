@@ -40,10 +40,18 @@ data class SettingsUiState(
     val isWorking: Boolean = false,
     val syncEnabled: Boolean = false,
     val syncFolderUri: String? = null,
+    val syncIntervalHours: Int = 4,
     val syncInProgress: Boolean = false,
     val syncLastResult: SyncResult? = null,
     val syncLog: List<SyncLogEntry> = emptyList(),
 ) {
     /** The most recent failure, if any — what the error banner shows. */
     val syncLastError: SyncLogEntry? get() = syncLog.lastOrNull { it.isError }
+
+    /**
+     * The most recent sync of any kind, success or failure — sourced from the persisted log
+     * rather than [syncLastResult], so it also reflects a run the background job did while this
+     * screen (or the app) wasn't open.
+     */
+    val lastSyncLogEntry: SyncLogEntry? get() = syncLog.lastOrNull()
 }

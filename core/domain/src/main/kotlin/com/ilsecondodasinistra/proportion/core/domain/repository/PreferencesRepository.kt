@@ -14,4 +14,6 @@ interface PreferencesRepository {
 
     /** Null clears the choice — the folder picker was cancelled, or the user turned sync off. */
     suspend fun setSyncFolderUri(uri: String?)
+
+    suspend fun setSyncIntervalHours(hours: Int)
 }

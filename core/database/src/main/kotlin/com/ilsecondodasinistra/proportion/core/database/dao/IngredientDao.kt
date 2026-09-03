@@ -36,8 +36,8 @@ interface IngredientDao {
     suspend fun findById(id: String): IngredientEntity?
 
     /** Folder sync (phase 10) only: literal rows are what travels — built-ins never do. */
-    @Query("SELECT id FROM ingredients WHERE is_built_in = 0")
-    suspend fun allLiteralIds(): List<String>
+    @Query("SELECT id, updated_at AS updatedAt FROM ingredients WHERE is_built_in = 0")
+    suspend fun allLiteralIdsWithUpdatedAt(): List<SyncableEntityId>
 
     @Query("SELECT * FROM ingredients WHERE normalised_name = :normalisedName LIMIT 1")
     suspend fun findByNormalisedName(normalisedName: String): IngredientEntity?

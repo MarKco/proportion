@@ -127,6 +127,29 @@ data class ScaleVariantEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long = 0L,
 )
 
+/**
+ * Folder sync (phase 10) dirty-check cache: the `updated_at` a local row had the last time it was
+ * successfully written to the sync folder. A push is skipped when the row's current `updated_at`
+ * still matches — an exact-equality check, never "newer than", so device clock skew can't make it
+ * skip a push that was actually needed.
+ */
+@Entity(tableName = "sync_export_cache")
+data class SyncExportCacheEntity(
+    @PrimaryKey @ColumnInfo(name = "entity_id") val entityId: String,
+    @ColumnInfo(name = "exported_updated_at") val exportedUpdatedAt: Long,
+)
+
+/**
+ * Folder sync (phase 10) dirty-check cache: the SAF `lastModified()` a remote file had the last
+ * time this device read and processed it. A pull is skipped when the file's current mtime still
+ * matches — never skipped when `lastModified()` is unknown (`0`), which some providers return.
+ */
+@Entity(tableName = "sync_seen_file")
+data class SyncSeenFileEntity(
+    @PrimaryKey @ColumnInfo(name = "file_name") val fileName: String,
+    @ColumnInfo(name = "last_modified") val lastModified: Long,
+)
+
 @Entity(
     tableName = "shopping_items",
     foreignKeys = [

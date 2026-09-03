@@ -126,6 +126,7 @@ fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel()) {
         onDismissRestore = viewModel::onRestoreDismissed,
         onSyncEnabledChange = viewModel::onSyncEnabledChange,
         onChooseFolderClick = { chooseSyncFolder.launch(null) },
+        onSyncIntervalChange = viewModel::onSyncIntervalChange,
         onSyncNowClick = viewModel::onSyncNowClick,
         onShareLogClick = {
             RecipeSharing.shareText(context, formatSyncLog(state.syncLog), syncShareLogTitle)
@@ -164,6 +165,7 @@ fun SettingsScreen(
     onDismissRestore: () -> Unit,
     onSyncEnabledChange: (Boolean) -> Unit,
     onChooseFolderClick: () -> Unit,
+    onSyncIntervalChange: (Int) -> Unit,
     onSyncNowClick: () -> Unit,
     onShareLogClick: () -> Unit,
 ) {
@@ -327,6 +329,7 @@ fun SettingsScreen(
                 state = state,
                 onSyncEnabledChange = onSyncEnabledChange,
                 onChooseFolderClick = onChooseFolderClick,
+                onSyncIntervalChange = onSyncIntervalChange,
                 onSyncNowClick = onSyncNowClick,
                 onShareLogClick = onShareLogClick,
             )

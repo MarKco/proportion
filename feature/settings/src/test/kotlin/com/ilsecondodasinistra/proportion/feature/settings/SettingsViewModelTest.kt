@@ -59,6 +59,9 @@ private class FakePreferencesRepository : PreferencesRepository {
     override suspend fun setSyncFolderUri(uri: String?) {
         preferences.value = preferences.value.copy(syncFolderUri = uri)
     }
+    override suspend fun setSyncIntervalHours(hours: Int) {
+        preferences.value = preferences.value.copy(syncIntervalHours = hours)
+    }
 }
 
 private class FakeLocaleController(private var tag: String? = null) : LocaleController {
@@ -115,9 +118,12 @@ private class FakeSyncRepository(var result: SyncResult = SyncResult(0, 0, 0, 0)
 private class FakeSyncScheduler : SyncScheduler {
     var scheduled = false
         private set
+    var lastIntervalHours: Int? = null
+        private set
 
-    override fun schedule() {
+    override fun schedule(intervalHours: Int) {
         scheduled = true
+        lastIntervalHours = intervalHours
     }
     override fun cancel() {
         scheduled = false
@@ -400,5 +406,49 @@ class SettingsViewModelTest {
         }
 
         assertThat(transfer.importedModes).isEmpty()
+    }
+
+    @Test
+    fun `turning sync on schedules the job with the interval currently in effect`() = runTest {
+        preferences.preferences.value = preferences.preferences.value.copy(syncIntervalHours = 8)
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onSyncEnabledChange(true)
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat(syncScheduler.scheduled).isTrue()
+        assertThat(syncScheduler.lastIntervalHours).isEqualTo(8)
+    }
+
+    @Test
+    fun `changing the interval while sync is on reschedules immediately`() = runTest {
+        preferences.preferences.value = preferences.preferences.value.copy(syncEnabled = true)
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onSyncIntervalChange(12)
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat(preferences.preferences.value.syncIntervalHours).isEqualTo(12)
+        assertThat(syncScheduler.lastIntervalHours).isEqualTo(12)
+    }
+
+    @Test
+    fun `changing the interval while sync is off only persists it, no reschedule`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            advanceUntilIdle()
+            vm.onSyncIntervalChange(12)
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat(preferences.preferences.value.syncIntervalHours).isEqualTo(12)
+        assertThat(syncScheduler.scheduled).isFalse()
     }
 }

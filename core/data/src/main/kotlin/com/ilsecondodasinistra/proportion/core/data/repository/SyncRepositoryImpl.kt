@@ -6,8 +6,11 @@ import androidx.documentfile.provider.DocumentFile
 import com.ilsecondodasinistra.proportion.core.data.toEntity
 import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.RecipeDao
+import com.ilsecondodasinistra.proportion.core.database.dao.SyncCacheDao
 import com.ilsecondodasinistra.proportion.core.database.dao.TagDao
 import com.ilsecondodasinistra.proportion.core.database.entity.IngredientEntity
+import com.ilsecondodasinistra.proportion.core.database.entity.SyncExportCacheEntity
+import com.ilsecondodasinistra.proportion.core.database.entity.SyncSeenFileEntity
 import com.ilsecondodasinistra.proportion.core.database.entity.TagEntity
 import com.ilsecondodasinistra.proportion.core.datastore.SyncLogDataSource
 import com.ilsecondodasinistra.proportion.core.domain.IngredientNames
@@ -40,6 +43,11 @@ import kotlinx.coroutines.flow.first
  * [syncNow] always does a full push before it pulls: every local recipe and literal
  * ingredient/tag is (re-)exported first. That is what makes turning sync on, and a fresh install
  * pointed at an already-populated folder, work with no separate "first run" path — see the spec.
+ *
+ * A push or a read is skipped when [syncCacheDao] shows nothing changed since the last run (an
+ * exact `updated_at` match for a local row, an exact SAF `lastModified()` match for a remote
+ * file) — the only reason this can run every 4h on a battery without costing much when the
+ * library and the folder are both quiet.
  */
 @Singleton
 class SyncRepositoryImpl @Inject constructor(
@@ -47,6 +55,7 @@ class SyncRepositoryImpl @Inject constructor(
     private val recipeDao: RecipeDao,
     private val ingredientDao: IngredientDao,
     private val tagDao: TagDao,
+    private val syncCacheDao: SyncCacheDao,
     private val transferRepository: TransferRepository,
     private val preferencesRepository: PreferencesRepository,
     private val syncLog: SyncLogDataSource,
@@ -104,19 +113,39 @@ class SyncRepositoryImpl @Inject constructor(
 
     private suspend fun pushEverything(folder: DocumentFile): Int {
         var exported = 0
-        recipeDao.allIds().forEach { id ->
+        recipeDao.allIdsWithUpdatedAt().forEach { (id, updatedAt) ->
+            if (alreadyExported(id, updatedAt)) return@forEach
             val text = transferRepository.exportRecipe(id) ?: return@forEach
-            if (writeFile(folder, fileName(RECIPE_PREFIX, id), text)) exported++
+            if (writeFile(folder, fileName(RECIPE_PREFIX, id), text)) {
+                exported++
+                markExported(id, updatedAt)
+            }
         }
-        ingredientDao.allLiteralIds().forEach { id ->
+        ingredientDao.allLiteralIdsWithUpdatedAt().forEach { (id, updatedAt) ->
+            if (alreadyExported(id, updatedAt)) return@forEach
             val text = transferRepository.exportIngredient(id) ?: return@forEach
-            if (writeFile(folder, fileName(INGREDIENT_PREFIX, id), text)) exported++
+            if (writeFile(folder, fileName(INGREDIENT_PREFIX, id), text)) {
+                exported++
+                markExported(id, updatedAt)
+            }
         }
-        tagDao.allLiteralIds().forEach { id ->
+        tagDao.allLiteralIdsWithUpdatedAt().forEach { (id, updatedAt) ->
+            if (alreadyExported(id, updatedAt)) return@forEach
             val text = transferRepository.exportTag(id) ?: return@forEach
-            if (writeFile(folder, fileName(TAG_PREFIX, id), text)) exported++
+            if (writeFile(folder, fileName(TAG_PREFIX, id), text)) {
+                exported++
+                markExported(id, updatedAt)
+            }
         }
         return exported
+    }
+
+    /** Exact match only, never "newer than": a stale/missing cache entry always re-exports. */
+    private suspend fun alreadyExported(id: String, updatedAt: Long): Boolean =
+        syncCacheDao.exportedUpdatedAt(id) == updatedAt
+
+    private suspend fun markExported(id: String, updatedAt: Long) {
+        syncCacheDao.upsertExportCache(SyncExportCacheEntity(id, updatedAt))
     }
 
     // --- pull -----------------------------------------------------------------------------
@@ -125,6 +154,7 @@ class SyncRepositoryImpl @Inject constructor(
         var imported = 0
         var deleted = 0
         filesWithPrefix(folder, RECIPE_PREFIX).forEach { file ->
+            if (!hasChangedSinceLastSeen(file)) return@forEach
             val text = readFile(file) ?: run {
                 log(isError = true, "File ricetta illeggibile nella cartella di sincronizzazione")
                 return@forEach
@@ -147,6 +177,7 @@ class SyncRepositoryImpl @Inject constructor(
                 }
                 SyncAction.Skip -> Unit
             }
+            markSeen(file)
         }
         return imported to deleted
     }
@@ -165,6 +196,7 @@ class SyncRepositoryImpl @Inject constructor(
     private suspend fun pullIngredients(folder: DocumentFile): Int {
         var imported = 0
         filesWithPrefix(folder, INGREDIENT_PREFIX).forEach { file ->
+            if (!hasChangedSinceLastSeen(file)) return@forEach
             val text = readFile(file) ?: run {
                 log(isError = true, "File ingrediente illeggibile nella cartella di sincronizzazione")
                 return@forEach
@@ -206,6 +238,7 @@ class SyncRepositoryImpl @Inject constructor(
                 )
                 imported++
             }
+            markSeen(file)
         }
         return imported
     }
@@ -213,6 +246,7 @@ class SyncRepositoryImpl @Inject constructor(
     private suspend fun pullTags(folder: DocumentFile): Int {
         var imported = 0
         filesWithPrefix(folder, TAG_PREFIX).forEach { file ->
+            if (!hasChangedSinceLastSeen(file)) return@forEach
             val text = readFile(file) ?: run {
                 log(isError = true, "File tag illeggibile nella cartella di sincronizzazione")
                 return@forEach
@@ -243,6 +277,7 @@ class SyncRepositoryImpl @Inject constructor(
                 )
                 imported++
             }
+            markSeen(file)
         }
         return imported
     }
@@ -252,7 +287,27 @@ class SyncRepositoryImpl @Inject constructor(
         recipeDao.tombstonesOlderThan(cutoff).forEach { id ->
             recipeDao.hardDeleteRecipe(id)
             folder.findFile(fileName(RECIPE_PREFIX, id))?.delete()
+            syncCacheDao.deleteExportCache(id)
+            syncCacheDao.deleteSeenFile(fileName(RECIPE_PREFIX, id))
         }
+    }
+
+    /**
+     * Folder sync (phase 10) dirty-check: `false` when [file]'s SAF `lastModified()` is the exact
+     * value it had the last time it was read — safe to skip reading, decoding and deciding what to
+     * do with it again. `0` means the provider doesn't report an mtime at all: always process in
+     * that case, never skip on the strength of an unknown value.
+     */
+    private suspend fun hasChangedSinceLastSeen(file: DocumentFile): Boolean {
+        val mtime = file.lastModified()
+        if (mtime == 0L) return true
+        return syncCacheDao.seenMtime(file.name.orEmpty()) != mtime
+    }
+
+    private suspend fun markSeen(file: DocumentFile) {
+        val mtime = file.lastModified()
+        if (mtime == 0L) return
+        syncCacheDao.upsertSeenFile(SyncSeenFileEntity(fileName = file.name.orEmpty(), lastModified = mtime))
     }
 
     // --- folder / file plumbing -------------------------------------------------------------

@@ -45,6 +45,12 @@
     <string name="settings_sync_now">Sync now</string>
     <string name="settings_sync_in_progress">Syncing…</string>
     <string name="settings_sync_last_result">%1$d exported, %2$d recipes imported, %3$d deleted, %4$d catalogue entries updated</string>
+    <string name="settings_sync_last_run">Last sync: %1$s</string>
+    <string name="settings_sync_interval">Sync interval</string>
+    <plurals name="settings_sync_interval_hours">
+        <item quantity="one">Every %d hour</item>
+        <item quantity="other">Every %d hours</item>
+    </plurals>
     <string name="settings_sync_error_banner">Last sync error: %1$s</string>
     <string name="settings_sync_share_log">Share log</string>
     <string name="settings_sync_share_log_title">ProPortion sync log</string>

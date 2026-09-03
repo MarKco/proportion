@@ -23,4 +23,6 @@ class PreferencesRepositoryImpl @Inject constructor(
     override suspend fun setSyncEnabled(enabled: Boolean) = dataSource.setSyncEnabled(enabled)
 
     override suspend fun setSyncFolderUri(uri: String?) = dataSource.setSyncFolderUri(uri)
+
+    override suspend fun setSyncIntervalHours(hours: Int) = dataSource.setSyncIntervalHours(hours)
 }

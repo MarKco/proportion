@@ -11,10 +11,11 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 
 /**
- * The periodic folder sync (phase 10) job — every ~4h, no foreground service, per Marco's
- * explicit call: there is no push notification from one device to the other anyway, only files
- * Syncthing (or equivalent) moves on its own schedule, so a period this coarse loses nothing a
- * tighter one would have caught, while costing a lot less battery. See the spec.
+ * The periodic folder sync (phase 10) job — every few hours (user-configurable, 4h by default),
+ * no foreground service, per Marco's explicit call: there is no push notification from one device
+ * to the other anyway, only files Syncthing (or equivalent) moves on its own schedule, so a period
+ * this coarse loses nothing a tighter one would have caught, while costing a lot less battery.
+ * See the spec.
  *
  * Never throws: [SyncRepository.syncNow] already turns every failure into a log entry rather than
  * an exception, but a worker must not crash the process regardless — a genuinely unexpected

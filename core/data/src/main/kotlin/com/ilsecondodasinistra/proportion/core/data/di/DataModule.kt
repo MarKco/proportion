@@ -14,11 +14,13 @@ import com.ilsecondodasinistra.proportion.core.data.repository.TransferRepositor
 import com.ilsecondodasinistra.proportion.core.database.Migration1to2
 import com.ilsecondodasinistra.proportion.core.database.Migration2to3
 import com.ilsecondodasinistra.proportion.core.database.Migration3to4
+import com.ilsecondodasinistra.proportion.core.database.Migration4to5
 import com.ilsecondodasinistra.proportion.core.database.ProPortionDatabase
 import com.ilsecondodasinistra.proportion.core.database.dao.IngredientDao
 import com.ilsecondodasinistra.proportion.core.database.dao.RecipeDao
 import com.ilsecondodasinistra.proportion.core.database.dao.ScaleVariantDao
 import com.ilsecondodasinistra.proportion.core.database.dao.ShoppingDao
+import com.ilsecondodasinistra.proportion.core.database.dao.SyncCacheDao
 import com.ilsecondodasinistra.proportion.core.database.dao.TagDao
 import com.ilsecondodasinistra.proportion.core.domain.SyncScheduler
 import com.ilsecondodasinistra.proportion.core.domain.TimeProvider
@@ -55,7 +57,7 @@ object DataModule {
     @Singleton
     fun database(@ApplicationContext context: Context): ProPortionDatabase =
         Room.databaseBuilder(context, ProPortionDatabase::class.java, ProPortionDatabase.NAME)
-            .addMigrations(Migration1to2(context), Migration2to3(context), Migration3to4())
+            .addMigrations(Migration1to2(context), Migration2to3(context), Migration3to4(), Migration4to5())
             .addCallback(ProPortionDatabase.seedCallback(context))
             .build()
 
@@ -64,6 +66,7 @@ object DataModule {
     @Provides fun tagDao(db: ProPortionDatabase): TagDao = db.tagDao()
     @Provides fun variantDao(db: ProPortionDatabase): ScaleVariantDao = db.scaleVariantDao()
     @Provides fun shoppingDao(db: ProPortionDatabase): ShoppingDao = db.shoppingDao()
+    @Provides fun syncCacheDao(db: ProPortionDatabase): SyncCacheDao = db.syncCacheDao()
 
     @Provides
     @Singleton
